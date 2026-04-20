@@ -682,9 +682,15 @@ export default function App() {
     unitE_tour: "https://framemakers.com.my/clients/parkside/type-e2/",
   };
 
-  const [images, setImages] = useState(defaultImages);
+  const [images, setImages] = useState(() => {
+    // Fast path: Check local storage immediately before first render
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('parkside_custom_images') : null;
+    return saved ? JSON.parse(saved) : defaultImages;
+  });
 
-  const [hasCustomImages, setHasCustomImages] = useState(false);
+  const [hasCustomImages, setHasCustomImages] = useState(() => {
+    return typeof window !== 'undefined' ? !!localStorage.getItem('parkside_custom_images') : false;
+  });
 
   // Auth Listener
   useEffect(() => {
@@ -811,6 +817,36 @@ export default function App() {
 
   return (
     <div className="font-sans">
+      <AnimatePresence>
+        {isLoadingConfig && (
+          <motion.div 
+            key="loader"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] bg-cream flex flex-col items-center justify-center"
+          >
+            <div className="flex flex-col items-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center"
+              >
+                 <span className="font-serif text-3xl md:text-5xl tracking-tight leading-none text-dark">PARKSIDE</span>
+                 <span className="font-display text-[10px] md:text-[12px] tracking-[0.4em] uppercase mt-2 text-gold">RESIDENCES</span>
+              </motion.div>
+              <div className="mt-8 w-48 h-[1px] bg-dark/5 relative overflow-hidden">
+                <motion.div 
+                  initial={{ x: '-100%' }}
+                  animate={{ x: '100%' }}
+                  transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                  className="absolute inset-0 bg-gold"
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Navbar lang={lang} setLang={setLang} />
 
       {/* --- HERO SECTION --- */}
