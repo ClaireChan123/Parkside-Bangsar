@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp, getDocFromServer, onSnapshot } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
@@ -51,9 +51,22 @@ export async function fetchConfig(): Promise<Record<string, string> | null> {
 
 export async function saveConfig(images: Record<string, string>, user: User) {
   const docRef = doc(db, CONFIG_DOC);
-  await setDoc(docRef, {
+  return setDoc(docRef, {
     images,
     updatedAt: serverTimestamp(),
     updatedBy: user.uid
   }, { merge: true });
+}
+
+export function subscribeToConfig(callback: (images: Record<string, string> | null) => void) {
+  const docRef = doc(db, CONFIG_DOC);
+  return onSnapshot(docRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.data().images);
+    } else {
+      callback(null);
+    }
+  }, (error) => {
+    console.error("Config subscription error:", error);
+  });
 }

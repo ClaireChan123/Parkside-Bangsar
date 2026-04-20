@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { translations } from './translations';
-import { db, auth, login, logout, fetchConfig, saveConfig } from './firebase';
+import { db, auth, login, logout, fetchConfig, saveConfig, subscribeToConfig } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   Trees, 
@@ -95,22 +95,23 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'gallery' | 'units' | 'facilities'>('general');
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     if (!user) {
       alert("Please login as administrator to save changes globally.");
       return;
     }
-    setIsSaving(true);
+    
+    // We close the panel immediately so the user doesn't feel stuck
+    // Firestore handles the write in the background and will update via onSnapshot
+    setIsOpen(false);
+    
     try {
       await saveConfig(images, user);
-      setIsOpen(false);
     } catch (error) {
       console.error("Save error:", error);
       alert("Error saving: check permissions or console.");
-    } finally {
-      setIsSaving(false);
+      // Re-open if failed? Maybe better to just log.
     }
   };
 
@@ -261,15 +262,12 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
 
                <button 
                 onClick={handleSave}
-                disabled={isSaving || !user}
+                disabled={!user}
                 className={`w-full py-4 font-display text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
                   user ? 'bg-dark text-white hover:bg-dark/90' : 'bg-dark/20 text-white/50 cursor-not-allowed'
                 }`}
               >
-                {isSaving ? (
-                   <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : <Save className="w-3 h-3" />} 
-                {isSaving ? 'Saving...' : 'Save Changes Globally'}
+                <Save className="w-3 h-3" /> Save Changes Globally
               </button>
               <button 
                 onClick={onReset}
@@ -686,29 +684,27 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Fetch Initial Config
+  // Fetch Initial Config & Subscribe to Real-time Updates
   useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const remoteImages = await fetchConfig();
-        if (remoteImages) {
-          setImages(remoteImages);
+    setIsLoadingConfig(true);
+    
+    // Use onSnapshot for real-time updates and faster feedback (latency compensation)
+    const unsubscribe = subscribeToConfig((remoteImages) => {
+      if (remoteImages) {
+        setImages(remoteImages);
+        setHasCustomImages(true);
+      } else {
+        // Fallback to local storage ONLY if no remote config exists yet
+        const saved = localStorage.getItem('parkside_custom_images');
+        if (saved && !hasCustomImages) {
+          setImages(JSON.parse(saved));
           setHasCustomImages(true);
-        } else {
-          // Fallback to local storage if no remote config
-          const saved = localStorage.getItem('parkside_custom_images');
-          if (saved) {
-            setImages(JSON.parse(saved));
-            setHasCustomImages(true);
-          }
         }
-      } catch (error) {
-        console.error("Config load error:", error);
-      } finally {
-        setIsLoadingConfig(false);
       }
-    };
-    loadConfig();
+      setIsLoadingConfig(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
