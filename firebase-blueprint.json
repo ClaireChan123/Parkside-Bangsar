@@ -1,0 +1,31 @@
+{
+  "entities": {
+    "AppData": {
+      "title": "Application Data",
+      "description": "Stores site-wide configuration like image URLs and tour links.",
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "object",
+          "description": "Map of image keys to their URLs"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "UID of the user who made the update"
+        }
+      },
+      "required": ["images", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/config/main": {
+      "schema": "AppData",
+      "description": "Primary configuration document for the landing page."
+    }
+  }
+}

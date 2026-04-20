@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() { 
+      return isSignedIn() 
+        && request.auth.token.email == 'clairee0726@gmail.com' 
+        && request.auth.token.email_verified == true; 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidAppData(data) {
+      return data.images is map
+        && data.images.size() < 100 // Prevent bloat
+        && data.updatedAt == request.time;
+    }
+
+    // --- Collections ---
+    match /config/main {
+      allow read: if true; // Publicly accessible to show current content
+      allow update: if isAdmin() && isValidAppData(incoming());
+      
+      // Prevent creation/deletion of this singleton doc manually through SDK
+      // It should be managed with care.
+      allow create: if isAdmin() && isValidAppData(incoming());
+      allow delete: if false; 
+    }
+  }
+}

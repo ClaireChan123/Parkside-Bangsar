@@ -6,6 +6,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { translations } from './translations';
+import { db, auth, login, logout, fetchConfig, saveConfig } from './firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   Trees, 
   TrainFront, 
@@ -27,7 +29,9 @@ import {
   Save,
   RotateCcw,
   Box,
-  Globe
+  Globe,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 
 // --- Components ---
@@ -83,13 +87,32 @@ const VirtualTourModal = ({ url, onClose }: { url: string; onClose: () => void }
   );
 };
 
-const EditPanel = ({ images, onUpdate, onReset }: { 
+const EditPanel = ({ images, onUpdate, onReset, user }: { 
   images: any; 
   onUpdate: (key: string, url: string) => void;
   onReset: () => void;
+  user: User | null;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'gallery' | 'units' | 'facilities'>('general');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!user) {
+      alert("Please login as administrator to save changes globally.");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await saveConfig(images, user);
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Save error:", error);
+      alert("Error saving: check permissions or console.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const categories = {
     general: [
@@ -222,11 +245,31 @@ const EditPanel = ({ images, onUpdate, onReset }: {
             </div>
 
             <div className="mt-8 pt-8 border-t border-dark/5 space-y-4 shrink-0">
+               {user ? (
+                 <div className="px-4 py-2 bg-cream text-dark/60 text-[10px] flex items-center justify-between mb-4">
+                   <span>Admin: {user.email}</span>
+                   <button onClick={() => logout()} className="text-gold hover:underline">Logout</button>
+                 </div>
+               ) : (
+                 <button 
+                   onClick={() => login()}
+                   className="w-full py-4 border border-gold text-gold font-display text-[10px] uppercase tracking-[0.2em] hover:bg-gold hover:text-white transition-all flex items-center justify-center gap-2 mb-4"
+                 >
+                   <LogIn className="w-3 h-3" /> Login as Admin
+                 </button>
+               )}
+
                <button 
-                onClick={() => setIsOpen(false)}
-                className="w-full py-4 bg-dark text-white font-display text-[10px] uppercase tracking-[0.2em] hover:bg-dark/90 transition-all flex items-center justify-center gap-2"
+                onClick={handleSave}
+                disabled={isSaving || !user}
+                className={`w-full py-4 font-display text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
+                  user ? 'bg-dark text-white hover:bg-dark/90' : 'bg-dark/20 text-white/50 cursor-not-allowed'
+                }`}
               >
-                <Save className="w-3 h-3" /> Save Changes
+                {isSaving ? (
+                   <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : <Save className="w-3 h-3" />} 
+                {isSaving ? 'Saving...' : 'Save Changes Globally'}
               </button>
               <button 
                 onClick={onReset}
@@ -567,6 +610,8 @@ interface UnitInfo {
 
 export default function App() {
   const [lang, setLang] = useState<'en' | 'zh'>('en');
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
   const [activeUnit, setActiveUnit] = useState<string>('A');
   const t = translations[lang];
   const [activeFacility, setActiveFacility] = useState<number>(8);
@@ -629,17 +674,52 @@ export default function App() {
     unitE_tour: "https://framemakers.com.my/clients/parkside/type-e2/",
   };
 
-  const [images, setImages] = useState(() => {
-    const saved = localStorage.getItem('parkside_custom_images');
-    return saved ? JSON.parse(saved) : defaultImages;
-  });
+  const [images, setImages] = useState(defaultImages);
+
+  const [hasCustomImages, setHasCustomImages] = useState(false);
+
+  // Auth Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch Initial Config
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const remoteImages = await fetchConfig();
+        if (remoteImages) {
+          setImages(remoteImages);
+          setHasCustomImages(true);
+        } else {
+          // Fallback to local storage if no remote config
+          const saved = localStorage.getItem('parkside_custom_images');
+          if (saved) {
+            setImages(JSON.parse(saved));
+            setHasCustomImages(true);
+          }
+        }
+      } catch (error) {
+        console.error("Config load error:", error);
+      } finally {
+        setIsLoadingConfig(false);
+      }
+    };
+    loadConfig();
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('parkside_custom_images', JSON.stringify(images));
-  }, [images]);
+    if (hasCustomImages) {
+      localStorage.setItem('parkside_custom_images', JSON.stringify(images));
+    }
+  }, [images, hasCustomImages]);
 
   const updateImage = (key: string, url: string) => {
     setImages((prev: any) => ({ ...prev, [key]: url }));
+    setHasCustomImages(true);
   };
 
   const resetImages = () => {
@@ -1360,6 +1440,7 @@ export default function App() {
         images={images} 
         onUpdate={updateImage} 
         onReset={resetImages} 
+        user={user}
       />
 
       <AnimatePresence>
