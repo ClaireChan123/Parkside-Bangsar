@@ -96,22 +96,27 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'gallery' | 'units' | 'facilities'>('general');
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = async () => {
     if (!user) {
       alert("Please login as administrator to save changes globally.");
       return;
     }
     
-    // We close the panel immediately so the user doesn't feel stuck
-    // Firestore handles the write in the background and will update via onSnapshot
-    setIsOpen(false);
+    setIsSaving(true);
     
     try {
       await saveConfig(images, user);
+      // Wait a tiny bit for a better feel
+      setTimeout(() => {
+        setIsSaving(false);
+        setIsOpen(false);
+      }, 500);
     } catch (error) {
       console.error("Save error:", error);
-      alert("Error saving: check permissions or console.");
-      // Re-open if failed? Maybe better to just log.
+      alert("Error saving: Ensure you are logged in with clairee0726@gmail.com");
+      setIsSaving(false);
     }
   };
 
@@ -262,12 +267,17 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
 
                <button 
                 onClick={handleSave}
-                disabled={!user}
+                disabled={!user || isSaving}
                 className={`w-full py-4 font-display text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
                   user ? 'bg-dark text-white hover:bg-dark/90' : 'bg-dark/20 text-white/50 cursor-not-allowed'
                 }`}
               >
-                <Save className="w-3 h-3" /> Save Changes Globally
+                {isSaving ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Save className="w-3 h-3" />
+                )}
+                {isSaving ? 'Processing...' : 'Save Changes Globally'}
               </button>
               <button 
                 onClick={onReset}

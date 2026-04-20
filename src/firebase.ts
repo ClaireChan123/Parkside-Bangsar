@@ -4,7 +4,8 @@ import { getFirestore, doc, getDoc, setDoc, serverTimestamp, getDocFromServer, o
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// CRITICAL: We must use the specific database ID from the config
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
