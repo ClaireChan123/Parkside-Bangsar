@@ -268,7 +268,12 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
                  </div>
                ) : (
                  <button 
-                   onClick={() => login()}
+                   onClick={() => {
+                     login().catch((err: any) => {
+                       console.error("Login fail:", err);
+                       alert("Login could not start: " + (err.message || "Unknown error") + "\n\nTip: You MUST add 'parksidebangsar.my' to 'Authorized Domains' in your Firebase console.");
+                     });
+                   }}
                    className="w-full py-4 border border-gold text-gold font-display text-[10px] uppercase tracking-[0.2em] hover:bg-gold hover:text-white transition-all flex items-center justify-center gap-2 mb-4"
                  >
                    <LogIn className="w-3 h-3" /> Login as Admin
