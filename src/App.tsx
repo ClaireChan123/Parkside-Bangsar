@@ -97,10 +97,11 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
   const [activeTab, setActiveTab] = useState<'general' | 'gallery' | 'units' | 'facilities'>('general');
 
   const [isSaving, setIsSaving] = useState(false);
+  const isAdmin = user?.email === 'clairee0726@gmail.com';
 
   const handleSave = async () => {
-    if (!user) {
-      alert("Please login as administrator to save changes globally.");
+    if (!user || !isAdmin) {
+      alert("Unauthorized: Only clairee0726@gmail.com can save changes.");
       return;
     }
     
@@ -254,11 +255,15 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
                 </section>
               ))}
             </div>
-
-            <div className="mt-8 pt-8 border-t border-dark/5 space-y-4 shrink-0">
+             <div className="mt-8 pt-8 border-t border-dark/5 space-y-4 shrink-0">
                {user ? (
                  <div className="px-4 py-2 bg-cream text-dark/60 text-[10px] flex items-center justify-between mb-4">
-                   <span>Admin: {user.email}</span>
+                   <div className="flex items-center gap-2">
+                     {isAdmin ? <ShieldCheck className="w-3 h-3 text-green-600" /> : <div className="w-2 h-2 rounded-full bg-dark/20" />}
+                     <span className={isAdmin ? "text-green-600 font-bold" : ""}>
+                       {isAdmin ? "Authorized Admin" : "Unauthorized User"}: {user.email}
+                     </span>
+                   </div>
                    <button onClick={() => logout()} className="text-gold hover:underline">Logout</button>
                  </div>
                ) : (
@@ -272,18 +277,19 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
 
                <button 
                 onClick={handleSave}
-                disabled={!user || isSaving}
+                disabled={!isAdmin || isSaving}
                 className={`w-full py-4 font-display text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
-                  user ? 'bg-dark text-white hover:bg-dark/90' : 'bg-dark/20 text-white/50 cursor-not-allowed'
+                  isAdmin ? 'bg-dark text-white hover:bg-dark/90' : 'bg-dark/10 text-dark/20 cursor-not-allowed'
                 }`}
               >
                 {isSaving ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <Save className="w-3 h-3" />
+                  <Save className={`w-3 h-3 ${!isAdmin ? 'opacity-20' : ''}`} />
                 )}
-                {isSaving ? 'Processing...' : 'Save Changes Globally'}
+                {isSaving ? 'Processing...' : isAdmin ? 'Save Changes Globally' : user ? 'Access Denied' : 'Login Required to Save'}
               </button>
+
               <button 
                 onClick={onReset}
                 className="w-full py-4 border border-dark/10 text-dark/40 font-display text-[10px] uppercase tracking-[0.2em] hover:text-dark hover:border-dark transition-all flex items-center justify-center gap-2"
