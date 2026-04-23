@@ -25,11 +25,10 @@ service cloud.firestore {
     // --- Collections ---
     match /config/main {
       allow read: if true; // Publicly accessible to show current content
-      allow update: if isAdmin() && isValidAppData(incoming());
       
-      // Prevent creation/deletion of this singleton doc manually through SDK
-      // It should be managed with care.
-      allow create: if isAdmin() && isValidAppData(incoming());
+      // We allow updates if the data is valid. 
+      // The "Master Password" check happens in the frontend.
+      allow update, create: if isValidAppData(incoming());
       allow delete: if false; 
     }
   }

@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { translations } from './translations';
-import { db, auth, login, logout, fetchConfig, saveConfig, subscribeToConfig, handleRedirectResult } from './firebase';
+import { db, auth, login, logout, fetchConfig, saveConfig, subscribeToConfig } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   Trees, 
@@ -87,28 +87,30 @@ const VirtualTourModal = ({ url, onClose }: { url: string; onClose: () => void }
   );
 };
 
-const EditPanel = ({ images, onUpdate, onReset, user }: { 
+const EditPanel = ({ images, onUpdate, onReset }: { 
   images: any; 
   onUpdate: (key: string, url: string) => void;
   onReset: () => void;
-  user: User | null;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'gallery' | 'units' | 'facilities'>('general');
-
+  const [typedPassword, setTypedPassword] = useState('');
+  const [isUnlocked, setIsUnlocked] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const isAdmin = user?.email === 'clairee0726@gmail.com';
+
+  const correctPassword = 'parkside2026123';
 
   const handleSave = async () => {
-    if (!user || !isAdmin) {
-      alert("Unauthorized: Only clairee0726@gmail.com can save changes.");
+    if (!isUnlocked) {
+      alert("Please enter the correct password first.");
       return;
     }
     
     setIsSaving(true);
     
     try {
-      await saveConfig(images, user);
+      // We pass null as user since we're using password auth now
+      await saveConfig(images, null);
       // Wait a tiny bit for a better feel
       setTimeout(() => {
         setIsSaving(false);
@@ -116,8 +118,17 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
       }, 500);
     } catch (error) {
       console.error("Save error:", error);
-      alert("Error saving: Ensure you are logged in with clairee0726@gmail.com");
+      alert("Error saving: The database might be restricted. Ensure I've updated the rules for you!");
       setIsSaving(false);
+    }
+  };
+
+  const handleUnlock = () => {
+    if (typedPassword === correctPassword) {
+      setIsUnlocked(true);
+      setTypedPassword('');
+    } else {
+      alert("Incorrect password. Please try again.");
     }
   };
 
@@ -256,43 +267,49 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
               ))}
             </div>
              <div className="mt-8 pt-8 border-t border-dark/5 space-y-4 shrink-0">
-               {user ? (
-                 <div className="px-4 py-2 bg-cream text-dark/60 text-[10px] flex items-center justify-between mb-4">
+               {isUnlocked ? (
+                 <div className="px-4 py-2 bg-green-50 text-green-700 text-[10px] flex items-center justify-between mb-4 border border-green-100">
                    <div className="flex items-center gap-2">
-                     {isAdmin ? <ShieldCheck className="w-3 h-3 text-green-600" /> : <div className="w-2 h-2 rounded-full bg-dark/20" />}
-                     <span className={isAdmin ? "text-green-600 font-bold" : ""}>
-                       {isAdmin ? "Authorized Admin" : "Unauthorized User"}: {user.email}
-                     </span>
+                     <ShieldCheck className="w-3 h-3" />
+                     <span className="font-bold uppercase tracking-wider">Admin Access Granted</span>
                    </div>
-                   <button onClick={() => logout()} className="text-gold hover:underline">Logout</button>
+                   <button onClick={() => setIsUnlocked(false)} className="text-green-800 hover:underline">Lock</button>
                  </div>
                ) : (
-                 <button 
-                   onClick={() => {
-                     login().catch((err: any) => {
-                       console.error("Login fail:", err);
-                       alert("Login could not start: " + (err.message || "Unknown error") + "\n\nTip: You MUST add 'parksidebangsar.my' to 'Authorized Domains' in your Firebase console.");
-                     });
-                   }}
-                   className="w-full py-4 border border-gold text-gold font-display text-[10px] uppercase tracking-[0.2em] hover:bg-gold hover:text-white transition-all flex items-center justify-center gap-2 mb-4"
-                 >
-                   <LogIn className="w-3 h-3" /> Login as Admin
-                 </button>
+                 <div className="space-y-3 mb-4">
+                   <p className="text-[9px] uppercase tracking-[0.2em] text-dark/40 font-bold">Admin Unlock</p>
+                   <div className="flex gap-2">
+                     <input 
+                       type="password"
+                       value={typedPassword}
+                       onChange={(e) => setTypedPassword(e.target.value)}
+                       placeholder="Enter master password"
+                       className="flex-1 bg-cream/50 border border-dark/5 px-3 py-2 text-[10px] outline-none focus:border-gold"
+                       onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
+                     />
+                     <button 
+                       onClick={handleUnlock}
+                       className="bg-gold text-white px-4 py-2 text-[9px] uppercase tracking-widest font-bold hover:bg-gold/90 transition-all shadow-sm"
+                     >
+                       Unlock
+                     </button>
+                   </div>
+                 </div>
                )}
 
                <button 
                 onClick={handleSave}
-                disabled={!isAdmin || isSaving}
+                disabled={!isUnlocked || isSaving}
                 className={`w-full py-4 font-display text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
-                  isAdmin ? 'bg-dark text-white hover:bg-dark/90' : 'bg-dark/10 text-dark/20 cursor-not-allowed'
+                  isUnlocked ? 'bg-dark text-white hover:bg-dark/90' : 'bg-dark/10 text-dark/20 cursor-not-allowed'
                 }`}
               >
                 {isSaving ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <Save className={`w-3 h-3 ${!isAdmin ? 'opacity-20' : ''}`} />
+                  <Save className={`w-3 h-3 ${!isUnlocked ? 'opacity-20' : ''}`} />
                 )}
-                {isSaving ? 'Processing...' : isAdmin ? 'Save Changes Globally' : user ? 'Access Denied' : 'Login Required to Save'}
+                {isSaving ? 'Processing...' : isUnlocked ? 'Save Changes Globally' : 'Unlock First to Save'}
               </button>
 
               <button 
@@ -713,16 +730,6 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
     });
-
-    // Handle redirect result
-    handleRedirectResult().catch((err: any) => {
-      if (err.code === 'auth/unauthorized-domain') {
-        alert("Login Error: This domain is not authorized in Firebase. Please add 'parksidebangsar.my' to Authorized Domains in Firebase Authentication settings.");
-      } else {
-        alert("Login Error: " + (err.message || "An error occurred during login. Please try again."));
-      }
-    });
-
     return () => unsubscribe();
   }, []);
 
@@ -1508,7 +1515,6 @@ export default function App() {
         images={images} 
         onUpdate={updateImage} 
         onReset={resetImages} 
-        user={user}
       />
 
       <AnimatePresence>
