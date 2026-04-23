@@ -980,8 +980,8 @@ export default function App() {
             </div>
             
             <div className="mt-12 grid grid-cols-2 gap-4">
-              <PropertyStat icon={Trees} label={t.vision.stats.anchor} value={t.highlights.masterplan.title} />
-              <PropertyStat icon={Maximize2} label={t.vision.stats.scale} value={t.highlights.masterplan.desc.split(' ')[0] + ' ' + t.vision.stats.unit} />
+              <PropertyStat icon={Trees} label={t.vision.stats.anchor} value={lang === 'en' ? "Integrated Greenery" : "融合绿化"} />
+              <PropertyStat icon={Maximize2} label={t.vision.stats.scale} value={(t.highlights.masterplan.title.match(/\d+/)?.[0] || '52') + ' ' + t.vision.stats.unit} />
             </div>
           </div>
           
