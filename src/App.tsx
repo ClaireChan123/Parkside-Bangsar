@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { translations } from './translations';
-import { db, auth, login, logout, fetchConfig, saveConfig, subscribeToConfig } from './firebase';
+import { db, auth, login, logout, fetchConfig, saveConfig, subscribeToConfig, handleRedirectResult } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { 
   Trees, 
@@ -137,18 +137,23 @@ const EditPanel = ({ images, onUpdate, onReset, user }: {
     units: [
       { key: 'unitA_1', label: 'Unit A - Layout 1' },
       { key: 'unitA_2', label: 'Unit A - Layout 2' },
+      { key: 'unitA_3', label: 'Unit A - Layout 3' },
       { key: 'unitA_tour', label: 'Unit A - Virtual Tour URL' },
       { key: 'unitB_1', label: 'Unit B - Layout 1' },
       { key: 'unitB_2', label: 'Unit B - Layout 2' },
+      { key: 'unitB_3', label: 'Unit B - Layout 3' },
       { key: 'unitB_tour', label: 'Unit B - Virtual Tour URL' },
       { key: 'unitC_1', label: 'Unit C - Layout 1' },
       { key: 'unitC_2', label: 'Unit C - Layout 2' },
+      { key: 'unitC_3', label: 'Unit C - Layout 3' },
       { key: 'unitC_tour', label: 'Unit C - Virtual Tour URL' },
       { key: 'unitD_1', label: 'Unit D - Layout 1' },
       { key: 'unitD_2', label: 'Unit D - Layout 2' },
+      { key: 'unitD_3', label: 'Unit D - Layout 3' },
       { key: 'unitD_tour', label: 'Unit D - Virtual Tour URL' },
       { key: 'unitE_1', label: 'Unit E - Layout 1' },
       { key: 'unitE_2', label: 'Unit E - Layout 2' },
+      { key: 'unitE_3', label: 'Unit E - Layout 3' },
       { key: 'unitE_tour', label: 'Unit E - Virtual Tour URL' }
     ],
     facilities: [
@@ -697,6 +702,16 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
     });
+
+    // Handle redirect result
+    handleRedirectResult().catch((err: any) => {
+      if (err.code === 'auth/unauthorized-domain') {
+        alert("Login Error: This domain is not authorized in Firebase. Please add 'parksidebangsar.my' to Authorized Domains in Firebase Authentication settings.");
+      } else {
+        alert("Login Error: " + (err.message || "An error occurred during login. Please try again."));
+      }
+    });
+
     return () => unsubscribe();
   }, []);
 
@@ -804,13 +819,13 @@ export default function App() {
     43: {
       name: lang === 'en' ? "Parkside Collective" : "Parkside 聚点",
       desc: lang === 'en' ? "Social spaces designed for connection, celebration, and collaborative work." : "专为社交、庆祝和协作办公而设计的社交空间。",
-      items: lang === 'en' ? ["Sky Lounge", "Co-working Hub", "Gourmet Kitchen"] : ["空中酒廊", "共享办公空间", "美食厨房"],
+      items: lang === 'en' ? ["Games Room", "Co-working Hub", "Hammock Garden"] : ["游戏室", "共享办公空间", "吊床花园"],
       images: getFacilityImages(43)
     },
     61: {
       name: lang === 'en' ? "Parkside Sky" : "Parkside 云端",
       desc: lang === 'en' ? "Elite amenities at the pinnacle of luxury, overlooking the breathtaking KL skyline." : "位于奢华巅峰的顶级设施，俯瞰令人叹为观止的吉隆坡天际线。",
-      items: lang === 'en' ? ["Sky Observation Deck", "Private Dining", "Yoga Sanctuary"] : ["空中观景台", "私人宴会厅", "瑜伽圣殿"],
+      items: lang === 'en' ? ["Sky Observation Deck", "Sky Lounge", "Sky Gym"] : ["空中观景台", "空中酒廊", "云端健身房"],
       images: getFacilityImages(61)
     }
   };
