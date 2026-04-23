@@ -652,7 +652,12 @@ interface UnitInfo {
 export default function App() {
   const [lang, setLang] = useState<'en' | 'zh'>('en');
   const [user, setUser] = useState<User | null>(null);
-  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('parkside_custom_images')) {
+      return false;
+    }
+    return true;
+  });
   const [activeUnit, setActiveUnit] = useState<string>('A');
   const t = translations[lang];
   const [activeFacility, setActiveFacility] = useState<number>(8);
@@ -735,9 +740,10 @@ export default function App() {
 
   // Fetch Initial Config & Subscribe to Real-time Updates
   useEffect(() => {
-    setIsLoadingConfig(true);
+    // If we are already showing cached images, we don't need to block
+    // but we still fetch the latest in the background
     
-    // Use onSnapshot for real-time updates and faster feedback (latency compensation)
+    let isInitialLoad = true;
     const unsubscribe = subscribeToConfig((remoteImages) => {
       if (remoteImages) {
         setImages(remoteImages);
@@ -750,10 +756,22 @@ export default function App() {
           setHasCustomImages(true);
         }
       }
-      setIsLoadingConfig(false);
+      
+      if (isInitialLoad) {
+        setIsLoadingConfig(false);
+        isInitialLoad = false;
+      }
     });
 
-    return () => unsubscribe();
+    // Safety timeout: if Firebase is too slow, show what we have after 1s
+    const timer = setTimeout(() => {
+      setIsLoadingConfig(false);
+    }, 1200);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {

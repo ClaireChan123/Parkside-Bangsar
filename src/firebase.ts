@@ -50,12 +50,12 @@ export async function fetchConfig(): Promise<Record<string, string> | null> {
   return null;
 }
 
-export async function saveConfig(images: Record<string, string>, user: User) {
+export async function saveConfig(images: Record<string, string>, user?: User | null) {
   const docRef = doc(db, CONFIG_DOC);
   return setDoc(docRef, {
     images,
     updatedAt: serverTimestamp(),
-    updatedBy: user.uid
+    updatedBy: user ? user.uid : 'admin_password'
   }, { merge: true });
 }
 
