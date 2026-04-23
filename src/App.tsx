@@ -912,7 +912,7 @@ export default function App() {
           animate={{ scale: 1, opacity: 0.7 }}
           transition={{ duration: 1.5 }}
           src={images.hero}
-          alt="Parkside Residences"
+          alt="Parkside Residences Bangsar - Luxury Living @ Setia Federal Hill KL"
           referrerPolicy="no-referrer"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -994,7 +994,7 @@ export default function App() {
             <div className="absolute -inset-4 border border-gold/20 -z-10 translate-x-8 translate-y-8" />
             <img 
               src={images.vision} 
-              alt="Vision" 
+              alt="Parkside Residences Bangsar Masterplan - 52-Acre Urban Sanctuary" 
               referrerPolicy="no-referrer"
               className="w-full h-auto transition-all duration-1000 shadow-2xl"
             />
