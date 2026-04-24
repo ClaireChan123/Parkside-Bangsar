@@ -1424,7 +1424,7 @@ export default function App() {
           >
             <div className="aspect-video md:aspect-[21/8] w-full bg-dark/50 relative grayscale invert-[0.9] contrast-[1.2] opacity-80 hover:opacity-100 transition-opacity duration-700">
               <iframe 
-                src="https://maps.google.com/maps?q=Setia%20Federal%20Hill%20Bangsar&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                src="https://maps.google.com/maps?q=Parkside%20Residences%20Bangsar%20Sales%20Gallery%20Federal%20Hill&t=&z=16&ie=UTF8&iwloc=&output=embed"
                 width="100%" 
                 height="100%" 
                 style={{ border: 0 }} 
