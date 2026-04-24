@@ -677,8 +677,8 @@ export default function App() {
 
   // --- Image State ---
   const defaultImages = {
-    hero: "https://picsum.photos/seed/tower-residence/1920/1080",
-    vision: "https://picsum.photos/seed/city-facade/1000/1200",
+    hero: "https://i.imgur.com/7sSn0ou.jpeg",
+    vision: "https://i.imgur.com/7sSn0ou.jpeg",
     unitA_1: "https://picsum.photos/seed/unit-a-1/1200/800",
     unitA_2: "",
     unitA_3: "",
@@ -907,11 +907,10 @@ export default function App() {
         
         {/* Main Background Image */}
         <motion.img 
-          key={images.hero}
           initial={{ scale: 1.1, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.7 }}
           transition={{ duration: 1.5 }}
-          src={images.hero}
+          src={images.hero.includes('?') ? images.hero : `${images.hero}?v=20260424`}
           alt="Parkside Residences Bangsar - Luxury Living @ Setia Federal Hill KL"
           referrerPolicy="no-referrer"
           className="absolute inset-0 w-full h-full object-cover"
