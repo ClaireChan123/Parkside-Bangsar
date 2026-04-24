@@ -97,6 +97,7 @@ export const translations = {
     location: {
       subtitle: "The Connectivity",
       title: "Gateway to the City",
+      interactiveTitle: "Interactive Location Map",
       desc: "Strategically located at the nexus of Bangsar and KL Sentral, offering unparalleled access to Malaysia's premier transport hub and lifestyle destinations.",
       items: [
         { venue: "KL Sentral Hub", dist: "1.2km" },
@@ -223,6 +224,7 @@ export const translations = {
     location: {
       subtitle: "地理位置",
       title: "通往城市的门户",
+      interactiveTitle: "互动式地理位置地图",
       desc: "战略性地坐落于孟沙和吉隆坡中央车站的交汇点，可直接通往马来西亚首屈一指的交通枢纽和生活目的地。",
       items: [
         { venue: "吉隆坡中央车站 (KL Sentral)", dist: "1.2km" },

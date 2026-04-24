@@ -1413,6 +1413,52 @@ export default function App() {
         </div>
       </section>
 
+      {/* --- INTERACTIVE MAP SECTION --- */}
+      <section className="bg-dark pb-20 md:pb-28">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="bg-white/5 border border-white/10 p-2 md:p-3 shadow-2xl relative"
+          >
+            <div className="aspect-video md:aspect-[21/8] w-full bg-dark/50 relative grayscale invert-[0.9] contrast-[1.2] opacity-80 hover:opacity-100 transition-opacity duration-700">
+              <iframe 
+                src="https://maps.google.com/maps?q=Setia%20Federal%20Hill%20Bangsar&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                width="100%" 
+                height="100%" 
+                style={{ border: 0 }} 
+                allowFullScreen={true}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="absolute inset-0"
+              ></iframe>
+            </div>
+            {/* Overlay to catch clicks and give a premium feel */}
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-dark to-transparent pointer-events-none" />
+          </motion.div>
+          <div className="mt-8 text-center">
+            <motion.h3 
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              className="font-display text-[10px] md:text-[11px] uppercase tracking-[0.4em] text-gold mb-3"
+            >
+              {t.location.interactiveTitle}
+            </motion.h3>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-white/30 text-[10px] md:text-[11px] font-light tracking-wide"
+            >
+              {lang === 'en' 
+                ? "Visit our Sales Gallery: Setia Federal Hill, Bangsar, 59000 Kuala Lumpur" 
+                : "欢迎莅临：马来西亚吉隆坡，孟沙，Setia Federal Hill 销售展厅 (59000)"}
+            </motion.p>
+          </div>
+        </div>
+      </section>
+
       {/* --- AMENITY GRID (EXTRA IMAGES) --- */}
       <section className="py-20 md:py-24 bg-white border-t border-dark/5">
         <div className="max-w-7xl mx-auto px-6 mb-12 md:mb-16">
