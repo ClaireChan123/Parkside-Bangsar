@@ -1421,9 +1421,9 @@ export default function App() {
             transition={{ duration: 0.8 }}
             className="bg-white/5 border border-white/10 p-2 md:p-3 shadow-2xl relative"
           >
-            <div className="aspect-video md:aspect-[21/8] w-full bg-dark/50 relative grayscale invert-[0.9] contrast-[1.2] opacity-80 hover:opacity-100 transition-opacity duration-700">
+            <div className="aspect-video md:aspect-[21/8] w-full bg-dark/50 relative">
               <iframe 
-                src="https://maps.google.com/maps?q=Parkside%20Residences%20Bangsar%20Sales%20Gallery%20Federal%20Hill&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d8092.332985346848!2d101.66237369357911!3d3.116453100000015!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31cc49e06d96bcf3%3A0xab273ff01a9d761c!2sParkside%20Residences%20Bangsar%20(Sales%20Gallery)!5e1!3m2!1sen!2sus!4v1777286858634!5m2!1sen!2sus"
                 width="100%" 
                 height="100%" 
                 style={{ border: 0 }} 
