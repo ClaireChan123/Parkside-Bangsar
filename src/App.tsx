@@ -763,10 +763,10 @@ export default function App() {
       }
     });
 
-    // Safety timeout: if Firebase is too slow, show what we have after 1s
+    // Safety timeout: if Firebase is too slow, show what we have after 300ms
     const timer = setTimeout(() => {
       setIsLoadingConfig(false);
-    }, 1200);
+    }, 300);
 
     return () => {
       unsubscribe();
@@ -907,12 +907,14 @@ export default function App() {
         
         {/* Main Background Image */}
         <motion.img 
-          initial={{ scale: 1.1, opacity: 0 }}
+          initial={{ scale: 1.05, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.7 }}
-          transition={{ duration: 1.5 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
           src={images.hero.includes('?') ? images.hero : `${images.hero}?v=20260424`}
           alt="Parkside Residences Bangsar - Luxury Living @ Setia Federal Hill KL"
           referrerPolicy="no-referrer"
+          fetchPriority="high"
+          loading="eager"
           className="absolute inset-0 w-full h-full object-cover"
         />
 
@@ -995,6 +997,7 @@ export default function App() {
               src={images.vision} 
               alt="Parkside Residences Bangsar Masterplan - 52-Acre Urban Sanctuary" 
               referrerPolicy="no-referrer"
+              loading="lazy"
               className="w-full h-auto transition-all duration-1000 shadow-2xl"
             />
           </motion.div>
@@ -1163,6 +1166,7 @@ export default function App() {
               alt="Luxury Living" 
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
               referrerPolicy="no-referrer"
+              loading="lazy"
             />
             <div className="absolute inset-0 bg-dark/20 group-hover:bg-transparent transition-colors duration-500" />
             <div className="absolute bottom-6 md:bottom-10 left-6 md:left-10 text-white opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
@@ -1183,6 +1187,7 @@ export default function App() {
               alt="Luxury Detail" 
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
               referrerPolicy="no-referrer"
+              loading="lazy"
             />
             <div className="absolute inset-0 bg-dark/20 group-hover:bg-transparent transition-colors duration-500" />
             <div className="absolute bottom-6 md:bottom-10 left-6 md:left-10 text-white opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
@@ -1253,6 +1258,7 @@ export default function App() {
                   src={facilities[activeFacility].images[activeFacilityImageIndex] || facilities[activeFacility].images[0]}
                   alt={facilities[activeFacility].name}
                   referrerPolicy="no-referrer"
+                  loading="lazy"
                   className="w-full h-full object-cover transition-all duration-1000"
                 />
                </AnimatePresence>
@@ -1387,6 +1393,7 @@ export default function App() {
                   <img 
                     src={images.locationMap} 
                     alt="Location Map" 
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000"
                     referrerPolicy="no-referrer"
                   />
@@ -1480,6 +1487,7 @@ export default function App() {
                 src={images[`gallery${i}`]} 
                 alt={`Amenity ${i}`}
                 referrerPolicy="no-referrer"
+                loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-dark/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
