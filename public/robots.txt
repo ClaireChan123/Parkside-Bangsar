@@ -7,6 +7,12 @@ Allow: /
 User-agent: Twitterbot
 Allow: /
 
+User-agent: AdsBot-Google
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
 User-agent: *
 Allow: /
 

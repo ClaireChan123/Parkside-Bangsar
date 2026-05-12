@@ -9,7 +9,7 @@ export const translations = {
     },
     hero: {
       subtitle: "The First Residential Icon",
-      title: "Nature's Rhythm, City's Pulse",
+      title: "Parkside Residences: Nature's Rhythm In Bangsar",
       desc: "Experience the pinnacle of park-side living within the 52-acre Setia Federal Hill masterplan. A sanctuary where urban sophistication meets verdant tranquility.",
       explore: "Explore Units"
     },
@@ -136,7 +136,7 @@ export const translations = {
     },
     hero: {
       subtitle: "首个标志性住宅项目",
-      title: "自然律动，城心脉搏",
+      title: "Parkside Residences: 城心脉搏，自然律动",
       desc: "在52英亩的 Setia Federal Hill 宏伟规划中，体验公园生活的巅峰。这是一个都市繁华与翠绿宁静完美融合的避风港。",
       explore: "探索单位"
     },

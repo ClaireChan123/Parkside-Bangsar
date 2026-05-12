@@ -1569,13 +1569,22 @@ export default function App() {
               <p className="font-display text-[8px] uppercase tracking-widest text-dark/40 mt-4 max-w-xs">{t.footer.address}</p>
             </div>
             
-            <div className="flex flex-wrap justify-center gap-x-6 md:gap-x-8 gap-y-4">
-              {t.footer.legal.map(s => (
-                <a key={s} href="#" className="font-display text-[8px] md:text-[9px] uppercase tracking-widest text-dark/40 hover:text-gold transition-colors">{s}</a>
-              ))}
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex flex-wrap justify-center gap-x-6 md:gap-x-8 gap-y-4">
+                {t.footer.legal.map(s => (
+                  <a key={s} href="#" className="font-display text-[8px] md:text-[9px] uppercase tracking-widest text-dark/40 hover:text-gold transition-colors">{s}</a>
+                ))}
+                <a href="#" className="font-display text-[8px] md:text-[9px] uppercase tracking-widest text-dark/40 hover:text-gold transition-colors">{lang === 'en' ? 'Privacy Policy' : '隐私政策'}</a>
+                <a href="#" className="font-display text-[8px] md:text-[9px] uppercase tracking-widest text-dark/40 hover:text-gold transition-colors">{lang === 'en' ? 'Terms of Service' : '服务条款'}</a>
+              </div>
+              <p className="font-display text-[7px] md:text-[8px] text-dark/30 max-w-2xl text-center leading-relaxed">
+                {lang === 'en' 
+                  ? "DISCLAIMER: This website is for informational purposes only. While every care has been taken in preparing this website, the developer and its agents cannot be held responsible for any inaccuracies. All visuals used are artist's impressions only. This is an authorized marketing website and not the official developer website."
+                  : "免责声明：本网站仅供参考。在编写本网站时，我们已尽一切努力确保信息的准确性，但开发商及其代理人不对任何不准确之处负责。所有视觉效果仅为艺术家印象。这是一个授权的营销网站，而非官方开发商网站。"}
+              </p>
             </div>
             
-            <span className="font-display text-[8px] md:text-[9px] uppercase tracking-widest text-dark/20 text-center md:text-right">
+            <span className="font-display text-[8px] md:text-[9px] uppercase tracking-widest text-dark/20 text-center md:text-right shrink-0">
               © 2026 Parkside Residences. <br className="md:hidden" /> All Rights Reserved.
             </span>
           </div>
