@@ -19,6 +19,7 @@ service cloud.firestore {
     function isValidAppData(data) {
       return data.images is map
         && data.images.size() < 100 // Prevent bloat
+        && (!data.keys().hasAny(['seo']) || data.seo is map)
         && data.updatedAt == request.time;
     }
 

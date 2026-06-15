@@ -87,13 +87,23 @@ const VirtualTourModal = ({ url, onClose }: { url: string; onClose: () => void }
   );
 };
 
-const EditPanel = ({ images, onUpdate, onReset }: { 
+const EditPanel = ({ 
+  images, 
+  onUpdate, 
+  seo,
+  onUpdateSeo,
+  onReset,
+  onSaveBulk 
+}: { 
   images: any; 
   onUpdate: (key: string, url: string) => void;
+  seo: any;
+  onUpdateSeo: (key: string, value: string) => void;
   onReset: () => void;
+  onSaveBulk: (newImages: any, newSeo: any) => Promise<any>;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'general' | 'gallery' | 'units' | 'facilities'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'gallery' | 'units' | 'facilities' | 'seo'>('general');
   const [typedPassword, setTypedPassword] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -109,9 +119,7 @@ const EditPanel = ({ images, onUpdate, onReset }: {
     setIsSaving(true);
     
     try {
-      // We pass null as user since we're using password auth now
-      await saveConfig(images, null);
-      // Wait a tiny bit for a better feel
+      await onSaveBulk(images, seo);
       setTimeout(() => {
         setIsSaving(false);
         setIsOpen(false);
@@ -208,8 +216,8 @@ const EditPanel = ({ images, onUpdate, onReset }: {
                   <Settings className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-display text-[10px] uppercase tracking-widest text-dark font-bold">Image Editor</h4>
-                  <p className="font-serif text-xs italic text-dark/40">Custom Gallery Management</p>
+                  <h4 className="font-display text-[10px] uppercase tracking-widest text-dark font-bold">SEO & Image Admin</h4>
+                  <p className="font-serif text-xs italic text-dark/40">Custom Settings Panel</p>
                 </div>
               </div>
               <button 
@@ -221,13 +229,13 @@ const EditPanel = ({ images, onUpdate, onReset }: {
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-dark/5 mb-8 shrink-0">
-              {(Object.keys(categories) as Array<keyof typeof categories>).map((tab) => (
+            <div className="flex border-b border-dark/5 mb-8 shrink-0 overflow-x-auto gap-1 pb-1 scrollbar-none">
+              {(['general', 'gallery', 'units', 'facilities', 'seo'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 pb-3 font-display text-[9px] uppercase tracking-widest transition-all ${
-                    activeTab === tab ? 'text-gold border-b border-gold' : 'text-dark/40 border-b border-transparent'
+                  className={`pb-3 px-2 font-display text-[9px] uppercase tracking-widest transition-all shrink-0 ${
+                    activeTab === tab ? 'text-gold border-b-2 border-gold font-bold' : 'text-dark/40 border-b-2 border-transparent'
                   }`}
                 >
                   {tab}
@@ -237,34 +245,107 @@ const EditPanel = ({ images, onUpdate, onReset }: {
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto pr-2 space-y-10 custom-scrollbar">
-              {categories[activeTab].map((item) => (
-                <section key={item.key} className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ImageIcon className="w-3 h-3 text-gold" />
-                    <span className="font-display text-[9px] uppercase tracking-[0.2em] text-dark/60 font-medium">{item.label} URL</span>
+              {activeTab === 'seo' ? (
+                <div className="space-y-6">
+                  <div className="p-3 bg-amber-50/50 border border-amber-500/15 text-[10px] text-amber-800 leading-relaxed rounded">
+                    <span className="font-bold">SEO/AEO/GEO Optimization Tip:</span> Ensure your meta keywords and description contain highly relevant localized keywords (Bangsar, Setia Federal Hill, Kuala Lumpur) with natural prose for AI answer engines.
                   </div>
-                  <div className="relative group">
+                  <section className="space-y-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Globe className="w-3 h-3 text-gold" />
+                      <span className="font-display text-[9px] uppercase tracking-[0.2em] text-dark/60 font-medium">English Headline</span>
+                    </div>
                     <input 
                       type="text" 
-                      value={images[item.key]}
-                      onChange={(e) => onUpdate(item.key, e.target.value)}
-                      className="w-full bg-dark/5 border border-dark/10 p-3 text-[10px] font-mono focus:border-gold outline-none transition-all truncate"
-                      placeholder="Paste image URL here..."
+                      value={seo?.headline_en || ''}
+                      onChange={(e) => onUpdateSeo('headline_en', e.target.value)}
+                      className="w-full bg-dark/5 border border-dark/10 p-3 text-[10px] focus:border-gold outline-none transition-all"
+                      placeholder="e.g. Parkside Residences: Nature's Rhythm In Bangsar"
                     />
-                    <div className="mt-4 aspect-video bg-dark/5 overflow-hidden border border-dark/5">
-                      <img 
-                        src={images[item.key]} 
-                        alt="Preview" 
-                        className="w-full h-full object-cover" 
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://picsum.photos/seed/error/800/600";
-                        }}
-                      />
+                  </section>
+                  <section className="space-y-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Globe className="w-3 h-3 text-gold" />
+                      <span className="font-display text-[9px] uppercase tracking-[0.2em] text-dark/60 font-medium">Chinese Headline</span>
                     </div>
-                  </div>
-                </section>
-              ))}
+                    <input 
+                      type="text" 
+                      value={seo?.headline_zh || ''}
+                      onChange={(e) => onUpdateSeo('headline_zh', e.target.value)}
+                      className="w-full bg-dark/5 border border-dark/10 p-3 text-[10px] focus:border-gold outline-none transition-all"
+                      placeholder="e.g. Parkside Residences: 城心脉搏，自然律动"
+                    />
+                  </section>
+                  <section className="space-y-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Globe className="w-3 h-3 text-gold" />
+                      <span className="font-display text-[9px] uppercase tracking-[0.2em] text-dark/60 font-medium">Meta Description</span>
+                    </div>
+                    <textarea 
+                      rows={4}
+                      value={seo?.description || ''}
+                      onChange={(e) => onUpdateSeo('description', e.target.value)}
+                      className="w-full bg-dark/5 border border-dark/10 p-3 text-[10px] focus:border-gold outline-none transition-all resize-none"
+                      placeholder="e.g. Parkside Residences Bangsar offers premium luxury living within the 52-acre Setia Federal Hill masterplan..."
+                    />
+                  </section>
+                  <section className="space-y-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Globe className="w-3 h-3 text-gold" />
+                      <span className="font-display text-[9px] uppercase tracking-[0.2em] text-dark/60 font-medium">Meta Keywords</span>
+                    </div>
+                    <textarea 
+                      rows={3}
+                      value={seo?.keywords || ''}
+                      onChange={(e) => onUpdateSeo('keywords', e.target.value)}
+                      className="w-full bg-dark/5 border border-dark/10 p-3 text-[10px] focus:border-gold outline-none transition-all resize-none font-mono text-[9px]"
+                      placeholder="e.g. Parkside Residences Bangsar, Setia Federal Hill, Bangsar Luxury Condo"
+                    />
+                  </section>
+                  <section className="space-y-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Globe className="w-3 h-3 text-gold" />
+                      <span className="font-display text-[9px] uppercase tracking-[0.2em] text-dark/60 font-medium">Google Site Verification Key</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      value={seo?.googleVerification || ''}
+                      onChange={(e) => onUpdateSeo('googleVerification', e.target.value)}
+                      className="w-full bg-dark/5 border border-dark/10 p-3 text-[10px] focus:border-gold outline-none transition-all font-mono"
+                      placeholder="e.g. SEr_TXbqdQipXgvNzvT_CRujszChYw3tfdur2iLt2D8"
+                    />
+                  </section>
+                </div>
+              ) : (
+                categories[activeTab].map((item) => (
+                  <section key={item.key} className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ImageIcon className="w-3 h-3 text-gold" />
+                      <span className="font-display text-[9px] uppercase tracking-[0.2em] text-dark/60 font-medium">{item.label}</span>
+                    </div>
+                    <div className="relative group">
+                      <input 
+                        type="text" 
+                        value={images[item.key]}
+                        onChange={(e) => onUpdate(item.key, e.target.value)}
+                        className="w-full bg-dark/5 border border-dark/10 p-3 text-[10px] font-mono focus:border-gold outline-none transition-all truncate"
+                        placeholder="Paste image URL here..."
+                      />
+                      <div className="mt-4 aspect-video bg-dark/5 overflow-hidden border border-dark/5">
+                        <img 
+                          src={images[item.key]} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover" 
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "https://picsum.photos/seed/error/800/600";
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </section>
+                ))
+              )}
             </div>
              <div className="mt-8 pt-8 border-t border-dark/5 space-y-4 shrink-0">
                {isUnlocked ? (
@@ -720,6 +801,19 @@ export default function App() {
     unitE_tour: "https://framemakers.com.my/clients/parkside/type-e2/",
   };
 
+  const defaultSeo = {
+    headline_en: "Parkside Residences: Nature's Rhythm In Bangsar",
+    headline_zh: "Parkside Residences: 城心脉搏，自然律动",
+    description: "Parkside Residences Bangsar offers premium luxury living within the 52-acre Setia Federal Hill masterplan. Exclusive suites starting from 485 sq. ft. Register for private viewing.",
+    keywords: "Parkside Residences Bangsar, Setia Federal Hill, Bangsar Luxury Condo, KL New Property 2026, Bangsar Residential, SP Setia Federal Hill, Luxury Suites Bangsar",
+    googleVerification: "SEr_TXbqdQipXgvNzvT_CRujszChYw3tfdur2iLt2D8"
+  };
+
+  const [seo, setSeo] = useState(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('parkside_custom_seo') : null;
+    return saved ? JSON.parse(saved) : defaultSeo;
+  });
+
   const [images, setImages] = useState(() => {
     // Fast path: Check local storage immediately before first render
     const saved = typeof window !== 'undefined' ? localStorage.getItem('parkside_custom_images') : null;
@@ -744,16 +838,25 @@ export default function App() {
     // but we still fetch the latest in the background
     
     let isInitialLoad = true;
-    const unsubscribe = subscribeToConfig((remoteImages) => {
-      if (remoteImages) {
-        setImages(remoteImages);
-        setHasCustomImages(true);
+    const unsubscribe = subscribeToConfig((remoteConfig) => {
+      if (remoteConfig) {
+        if (remoteConfig.images) {
+          setImages(remoteConfig.images);
+          setHasCustomImages(true);
+        }
+        if (remoteConfig.seo) {
+          setSeo(remoteConfig.seo);
+        }
       } else {
         // Fallback to local storage ONLY if no remote config exists yet
-        const saved = localStorage.getItem('parkside_custom_images');
-        if (saved && !hasCustomImages) {
-          setImages(JSON.parse(saved));
+        const savedImages = localStorage.getItem('parkside_custom_images');
+        if (savedImages && !hasCustomImages) {
+          setImages(JSON.parse(savedImages));
           setHasCustomImages(true);
+        }
+        const savedSeo = localStorage.getItem('parkside_custom_seo');
+        if (savedSeo) {
+          setSeo(JSON.parse(savedSeo));
         }
       }
       
@@ -780,6 +883,39 @@ export default function App() {
     }
   }, [images, hasCustomImages]);
 
+  useEffect(() => {
+    localStorage.setItem('parkside_custom_seo', JSON.stringify(seo));
+  }, [seo]);
+
+  // Dynamic Head SEO Injector
+  useEffect(() => {
+    // 1. Title
+    document.title = `Parkside Residences Bangsar | ${lang === 'en' ? (seo.headline_en || defaultSeo.headline_en) : (seo.headline_zh || defaultSeo.headline_zh)}`;
+    
+    // Helper to add or update metas
+    const updateMeta = (nameAttr: string, valAttr: string, content: string) => {
+      let meta = document.querySelector(`meta[${nameAttr}="${valAttr}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute(nameAttr, valAttr);
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', content);
+    };
+
+    updateMeta('name', 'description', seo.description || defaultSeo.description);
+    updateMeta('name', 'keywords', seo.keywords || defaultSeo.keywords);
+    updateMeta('name', 'google-site-verification', seo.googleVerification || defaultSeo.googleVerification);
+
+    // Open Graph
+    updateMeta('property', 'og:title', `Parkside Residences Bangsar | ${lang === 'en' ? (seo.headline_en || defaultSeo.headline_en) : (seo.headline_zh || defaultSeo.headline_zh)}`);
+    updateMeta('property', 'og:description', seo.description || defaultSeo.description);
+
+    // Twitter
+    updateMeta('property', 'twitter:title', `Parkside Residences Bangsar | ${lang === 'en' ? (seo.headline_en || defaultSeo.headline_en) : (seo.headline_zh || defaultSeo.headline_zh)}`);
+    updateMeta('property', 'twitter:description', seo.description || defaultSeo.description);
+  }, [seo, lang]);
+
   const updateImage = (key: string, url: string) => {
     setImages((prev: any) => ({ ...prev, [key]: url }));
     setHasCustomImages(true);
@@ -787,7 +923,9 @@ export default function App() {
 
   const resetImages = () => {
     setImages(defaultImages);
+    setSeo(defaultSeo);
     localStorage.removeItem('parkside_custom_images');
+    localStorage.removeItem('parkside_custom_seo');
   };
 
   const getUnitImages = (type: string) => {
@@ -927,15 +1065,11 @@ export default function App() {
             <span className="font-display text-[12px] uppercase tracking-[0.6em] text-gold mb-6 block">
               {t.hero.subtitle}
             </span>
-            <h1 className="font-serif text-5xl sm:text-6xl md:text-8xl lg:text-9xl mb-6 md:mb-8 leading-[0.9] text-balance">
-              {lang === 'en' ? (
-                <>The Future of <br className="hidden sm:block" /> <span className="italic">Bangsar Living</span></>
-              ) : (
-                <>{t.hero.title}</>
-              )}
+            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl mb-6 md:mb-8 leading-[1.1] text-balance">
+              {lang === 'en' ? (seo.headline_en || "Parkside Residences: Nature's Rhythm In Bangsar") : (seo.headline_zh || "Parkside Residences: 城心脉搏，自然律动")}
             </h1>
-            <p className="font-display text-xs md:text-base uppercase tracking-widest max-w-xl mx-auto mb-10 md:mb-12 text-white/70">
-              {t.hero.desc}
+            <p className="font-display text-xs md:text-sm tracking-widest max-w-xl mx-auto mb-10 md:mb-12 text-white/70">
+              {seo.description || t.hero.desc}
             </p>
             <div className="flex flex-col md:flex-row gap-4 justify-center">
               <a 
@@ -1594,7 +1728,14 @@ export default function App() {
       <EditPanel 
         images={images} 
         onUpdate={updateImage} 
+        seo={seo}
+        onUpdateSeo={(key: string, val: string) => {
+          setSeo((prev: any) => ({ ...prev, [key]: val }));
+        }}
         onReset={resetImages} 
+        onSaveBulk={async (newImages: any, newSeo: any) => {
+          return saveConfig(newImages, newSeo, null);
+        }}
       />
 
       <AnimatePresence>

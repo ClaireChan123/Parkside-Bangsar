@@ -35,35 +35,44 @@ testConnection();
 
 export interface AppConfig {
   images: Record<string, string>;
+  seo?: Record<string, string>;
   updatedAt: any;
   updatedBy: string;
 }
 
 const CONFIG_DOC = 'config/main';
 
-export async function fetchConfig(): Promise<Record<string, string> | null> {
+export async function fetchConfig(): Promise<any | null> {
   const docRef = doc(db, CONFIG_DOC);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return docSnap.data().images;
+    return docSnap.data();
   }
   return null;
 }
 
-export async function saveConfig(images: Record<string, string>, user?: User | null) {
+export async function saveConfig(images: Record<string, string>, seo?: Record<string, string>, user?: User | null) {
   const docRef = doc(db, CONFIG_DOC);
-  return setDoc(docRef, {
+  const payload: any = {
     images,
     updatedAt: serverTimestamp(),
     updatedBy: user ? user.uid : 'admin_password'
-  }, { merge: true });
+  };
+  if (seo) {
+    payload.seo = seo;
+  }
+  return setDoc(docRef, payload, { merge: true });
 }
 
-export function subscribeToConfig(callback: (images: Record<string, string> | null) => void) {
+export function subscribeToConfig(callback: (config: { images: Record<string, string> | null; seo: Record<string, string> | null } | null) => void) {
   const docRef = doc(db, CONFIG_DOC);
   return onSnapshot(docRef, (snapshot) => {
     if (snapshot.exists()) {
-      callback(snapshot.data().images);
+      const data = snapshot.data();
+      callback({
+        images: data.images || null,
+        seo: data.seo || null
+      });
     } else {
       callback(null);
     }

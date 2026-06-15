@@ -9,6 +9,10 @@
           "type": "object",
           "description": "Map of image keys to their URLs"
         },
+        "seo": {
+          "type": "object",
+          "description": "Customizable SEO, AEO, and GEO meta fields including titles, descriptions, and verification keys"
+        },
         "updatedAt": {
           "type": "string",
           "format": "date-time",
