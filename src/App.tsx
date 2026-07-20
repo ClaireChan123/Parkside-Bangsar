@@ -107,6 +107,33 @@ const EditPanel = ({
   const [typedPassword, setTypedPassword] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showTrigger, setShowTrigger] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('admin') === 'true' || window.location.hash === '#admin') {
+        setShowTrigger(true);
+      }
+
+      let keySequence: string[] = [];
+      const targetSequence = ['a', 'd', 'm', 'i', 'n'];
+      
+      const handleKeyDown = (e: KeyboardEvent) => {
+        keySequence.push(e.key.toLowerCase());
+        keySequence = keySequence.slice(-targetSequence.length);
+        
+        if (JSON.stringify(keySequence) === JSON.stringify(targetSequence)) {
+          setShowTrigger(prev => !prev);
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, []);
 
   const correctPassword = 'parkside2026123';
 
@@ -194,13 +221,15 @@ const EditPanel = ({
 
   return (
     <>
-      <button 
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-[100] w-12 h-12 bg-dark border border-gold/50 text-gold flex items-center justify-center rounded-full shadow-2xl hover:scale-110 transition-transform group"
-        title="Open Editor"
-      >
-        <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
-      </button>
+      {showTrigger && (
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-6 right-6 z-[100] w-12 h-12 bg-dark border border-gold/50 text-gold flex items-center justify-center rounded-full shadow-2xl hover:scale-110 transition-transform group"
+          title="Open Editor"
+        >
+          <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
+        </button>
+      )}
 
       <AnimatePresence>
         {isOpen && (
