@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { translations } from './translations';
 import { db, auth, login, logout, fetchConfig, saveConfig, subscribeToConfig } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { WhatsAppWidget, WhatsAppIcon } from './components/WhatsAppWidget';
 import { 
   Trees, 
   TrainFront, 
@@ -2012,6 +2013,8 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+
+      <WhatsAppWidget lang={lang} />
     </div>
   );
 }
