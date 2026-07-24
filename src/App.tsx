@@ -792,12 +792,7 @@ interface UnitInfo {
 export default function App() {
   const [lang, setLang] = useState<'en' | 'zh'>('en');
   const [user, setUser] = useState<User | null>(null);
-  const [isLoadingConfig, setIsLoadingConfig] = useState(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('parkside_custom_images')) {
-      return false;
-    }
-    return true;
-  });
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
   const [activeUnit, setActiveUnit] = useState<string>('A');
   const t = translations[lang];
   const [galleryFilter, setGalleryFilter] = useState<'all' | 'level8' | 'level43' | 'level61'>('all');
@@ -815,6 +810,7 @@ export default function App() {
     const cleanSrc = src.trim();
     if (cleanSrc.toLowerCase().includes('imgur')) return fallback;
     if (cleanSrc.startsWith('data:') || cleanSrc.startsWith('blob:')) return cleanSrc;
+    if (cleanSrc.startsWith('/')) return cleanSrc;
     return cleanSrc.includes('?') ? cleanSrc : `${cleanSrc}?v=20260424`;
   };
 
@@ -850,6 +846,8 @@ export default function App() {
     facility61_3: "/facility61_3.jpeg",
     facility61_4: "/facility61_4.jpeg",
     locationMap: "/locationMap.jpg",
+    mainLobby: "/mainLobby.jpg",
+    dropOff: "/dropOff.jpg",
     gallery1: "/facility8_1.jpeg",
     gallery2: "/facility61_1.jpeg",
     gallery3: "/facility43_1.jpeg",
@@ -1157,9 +1155,9 @@ export default function App() {
         
         {/* Main Background Image */}
         <motion.img 
-          initial={{ scale: 1.05, opacity: 0 }}
+          initial={{ scale: 1.05, opacity: 0.7 }}
           animate={{ scale: 1, opacity: 0.7 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
           src={getImgSrc(images?.hero, '/hero.jpeg')}
           onError={(e) => {
             const target = e.currentTarget;
@@ -1171,6 +1169,7 @@ export default function App() {
           referrerPolicy="no-referrer"
           fetchPriority="high"
           loading="eager"
+          decoding="async"
           className="absolute inset-0 w-full h-full object-cover"
         />
 
@@ -1415,6 +1414,7 @@ export default function App() {
           <div className="flex flex-wrap justify-center gap-3 md:gap-5 mt-8">
             {[
               { id: 'all', label: lang === 'en' ? "All Masterpieces" : "全部画廊杰作" },
+              { id: 'ground', label: lang === 'en' ? "Ground Level: Arrival & Lobby" : "G层: 尊荣大堂与落客区" },
               { id: 'level8', label: lang === 'en' ? "Level 8: Parkside Retreat" : "8层: Parkside 悦园" },
               { id: 'level43', label: lang === 'en' ? "Level 43: Parkside Collective" : "43层: Parkside 聚点" },
               { id: 'level61', label: lang === 'en' ? "Level 61: Parkside Sky" : "61层: Parkside 云端" },
@@ -1436,6 +1436,28 @@ export default function App() {
 
         {(() => {
           const allGalleryMasterpieces = [
+            {
+              id: 'mainLobby',
+              levelKey: 'ground',
+              badge: 'Ground Level',
+              categoryName: lang === 'en' ? 'Ground Level: Arrival & Lobby' : 'G层: 尊荣大堂与落客区',
+              title: lang === 'en' ? 'Grand Main Lobby' : '尊荣主大堂',
+              subtitle: lang === 'en' ? 'Double-Height Entrance & Grand Reception' : '挑高双层奢华大堂与前台接待',
+              src: getImgSrc(images?.mainLobby, '/mainLobby.jpg'),
+              fallback: '/mainLobby.jpg',
+              gridClass: 'md:col-span-8 aspect-video md:aspect-[16/9]'
+            },
+            {
+              id: 'dropOff',
+              levelKey: 'ground',
+              badge: 'Ground Level',
+              categoryName: lang === 'en' ? 'Ground Level: Arrival & Lobby' : 'G层: 尊荣大堂与落客区',
+              title: lang === 'en' ? 'Porte-Cochère & Drop-Off Area' : '落客门廊与贵宾大堂',
+              subtitle: lang === 'en' ? 'Seamless VIP Arrival & Water Features' : '尊贵到访体验与水景迎宾门廊',
+              src: getImgSrc(images?.dropOff, '/dropOff.jpg'),
+              fallback: '/dropOff.jpg',
+              gridClass: 'md:col-span-4 aspect-video md:aspect-[4/5]'
+            },
             {
               id: 'f8_1',
               levelKey: 'level8',
@@ -1575,7 +1597,11 @@ export default function App() {
                         loading="lazy"
                         onError={(e) => {
                           const target = e.currentTarget;
-                          if (!target.src.includes(item.fallback)) {
+                          if (target.src.includes('.jpg')) {
+                            target.src = target.src.replace('.jpg', '.jpeg');
+                          } else if (target.src.includes('.jpeg')) {
+                            target.src = target.src.replace('.jpeg', '.png');
+                          } else if (!target.src.includes(item.fallback)) {
                             target.src = getImgSrc(item.fallback);
                           }
                         }}
