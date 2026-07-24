@@ -15,6 +15,7 @@ import {
   Building2, 
   Maximize2, 
   ChevronRight, 
+  ChevronLeft,
   ArrowRight,
   ShieldCheck,
   Zap,
@@ -111,25 +112,44 @@ const EditPanel = ({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('admin') === 'true' || window.location.hash === '#admin') {
-        setShowTrigger(true);
-      }
+      const checkAdmin = () => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('admin') === 'true' || window.location.hash === '#admin') {
+          setShowTrigger(true);
+          setIsOpen(true);
+        }
+      };
+
+      checkAdmin();
+      window.addEventListener('hashchange', checkAdmin);
 
       let keySequence: string[] = [];
       const targetSequence = ['a', 'd', 'm', 'i', 'n'];
       
       const handleKeyDown = (e: KeyboardEvent) => {
+        const targetTag = (e.target as HTMLElement)?.tagName;
+        if (targetTag === 'INPUT' || targetTag === 'TEXTAREA') return;
+
         keySequence.push(e.key.toLowerCase());
         keySequence = keySequence.slice(-targetSequence.length);
         
         if (JSON.stringify(keySequence) === JSON.stringify(targetSequence)) {
-          setShowTrigger(prev => !prev);
+          setShowTrigger(true);
+          setIsOpen(prev => !prev);
         }
       };
 
+      const handleOpenAdmin = () => {
+        setShowTrigger(true);
+        setIsOpen(true);
+      };
+
+      window.addEventListener('open-admin-panel', handleOpenAdmin);
       window.addEventListener('keydown', handleKeyDown);
+
       return () => {
+        window.removeEventListener('hashchange', checkAdmin);
+        window.removeEventListener('open-admin-panel', handleOpenAdmin);
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
@@ -170,7 +190,7 @@ const EditPanel = ({
   const categories = {
     general: [
       { key: 'hero', label: 'Hero Background' },
-      { key: 'vision', label: 'Vision Masterplan' },
+      { key: 'vision', label: 'Overview Masterplan' },
       { key: 'locationMap', label: 'Location Map Image' }
     ],
     gallery: [
@@ -449,7 +469,7 @@ const Navbar = ({ lang, setLang }: { lang: 'en' | 'zh', setLang: (l: 'en' | 'zh'
 
   const navLinks = [
     { name: t.vision, href: '#vision' },
-    { name: t.amenities, href: '#facilities' },
+    { name: t.gallery, href: '#gallery' },
     { name: t.residences, href: '#layouts' },
     { name: t.location, href: '#location' },
   ];
@@ -658,6 +678,16 @@ const LayoutPreview: React.FC<LayoutPreviewProps & { lang: 'en' | 'zh' }> = ({
             src={currentUnit.images[activeLayoutIndex] || currentUnit.images[0]}
             alt={currentUnit.title}
             referrerPolicy="no-referrer"
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (target.src.includes('.png')) {
+                target.src = target.src.replace('.png', '.jpg');
+              } else if (target.src.includes('.webp')) {
+                target.src = target.src.replace('.webp', '.jpg');
+              } else if (target.src.includes('.jpeg')) {
+                target.src = target.src.replace('.jpeg', '.jpg');
+              }
+            }}
             className="w-full h-full object-contain p-4 md:p-8"
           />
         </AnimatePresence>
@@ -770,9 +800,9 @@ export default function App() {
   });
   const [activeUnit, setActiveUnit] = useState<string>('A');
   const t = translations[lang];
-  const [activeFacility, setActiveFacility] = useState<number>(8);
+  const [galleryFilter, setGalleryFilter] = useState<'all' | 'level8' | 'level43' | 'level61'>('all');
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [activeLayoutIndex, setActiveLayoutIndex] = useState<number>(0);
-  const [activeFacilityImageIndex, setActiveFacilityImageIndex] = useState<number>(0);
   const [activeTourUrl, setActiveTourUrl] = useState<string | null>(null);
 
   // Reset layout index when unit changes
@@ -780,54 +810,75 @@ export default function App() {
     setActiveLayoutIndex(0);
   }, [activeUnit]);
 
-  // Reset facility image index when level changes
-  useEffect(() => {
-    setActiveFacilityImageIndex(0);
-  }, [activeFacility]);
+  const getImgSrc = (src: string | undefined, fallback: string = '/hero.jpeg') => {
+    if (!src || src.trim() === '') return fallback;
+    const cleanSrc = src.trim();
+    if (cleanSrc.startsWith('data:') || cleanSrc.startsWith('blob:')) return cleanSrc;
+    return cleanSrc.includes('?') ? cleanSrc : `${cleanSrc}?v=20260424`;
+  };
 
   // --- Image State ---
-  const defaultImages = {
-    hero: "https://i.imgur.com/7sSn0ou.jpeg",
-    vision: "https://i.imgur.com/7sSn0ou.jpeg",
-    unitA_1: "https://picsum.photos/seed/unit-a-1/1200/800",
+  const defaultImages: Record<string, string> = {
+    hero: "/hero.jpeg",
+    vision: "/vision.jpeg",
+    unitA_1: "/unitA_1.jpg",
     unitA_2: "",
     unitA_3: "",
-    unitB_1: "https://picsum.photos/seed/unit-b-1/1200/800",
+    unitB_1: "/unitB_1.jpg",
     unitB_2: "",
     unitB_3: "",
-    unitC_1: "https://picsum.photos/seed/unit-c-1/1200/800",
-    unitC_2: "",
+    unitC_1: "/unitC_1.jpg",
+    unitC_2: "/unitC_2.jpg",
     unitC_3: "",
-    unitD_1: "https://picsum.photos/seed/unit-d-1/1200/800",
-    unitD_2: "",
-    unitD_3: "",
-    unitE_1: "https://picsum.photos/seed/unit-e-1/1200/800",
-    unitE_2: "",
+    unitD_1: "/unitD_1.jpg",
+    unitD_2: "/unitD_2.jpg",
+    unitD_3: "/unitD_3.jpg",
+    unitE_1: "/unitE_1.jpg",
+    unitE_2: "/unitE_2.jpg",
     unitE_3: "",
-    facility8_1: "https://picsum.photos/seed/luxury-condo-amenities-8/1200/800",
-    facility8_2: "",
-    facility8_3: "",
+    facility8_1: "/facility8_1.jpeg",
+    facility8_2: "/facility8_2.jpeg",
+    facility8_3: "/facility8_3.jpeg",
     facility8_4: "",
-    facility43_1: "https://picsum.photos/seed/luxury-condo-amenities-43/1200/800",
-    facility43_2: "",
-    facility43_3: "",
+    facility43_1: "/facility43_1.jpeg",
+    facility43_2: "/facility43_2.jpeg",
+    facility43_3: "/facility43_3.jpeg",
     facility43_4: "",
-    facility61_1: "https://picsum.photos/seed/luxury-condo-amenities-61/1200/800",
-    facility61_2: "",
-    facility61_3: "",
-    facility61_4: "",
-    locationMap: "https://picsum.photos/seed/kuala-lumpur-map/1200/1200",
-    gallery1: "https://picsum.photos/seed/luxury-lobby/1920/1080",
-    gallery2: "https://picsum.photos/seed/luxury-lifestyle/1920/1080",
-    gallery3: "https://picsum.photos/seed/amenity-3/1200/800",
-    gallery4: "https://picsum.photos/seed/amenity-4/1200/800",
-    gallery5: "https://picsum.photos/seed/amenity-5/1200/800",
-    gallery6: "https://picsum.photos/seed/amenity-6/1200/800",
+    facility61_1: "/facility61_1.jpeg",
+    facility61_2: "/facility61_2.jpeg",
+    facility61_3: "/facility61_3.jpeg",
+    facility61_4: "/facility61_4.jpeg",
+    locationMap: "/locationMap.jpg",
+    gallery1: "/facility8_1.jpeg",
+    gallery2: "/facility61_1.jpeg",
+    gallery3: "/facility43_1.jpeg",
+    gallery4: "/facility8_2.jpeg",
+    gallery5: "/facility61_2.jpeg",
+    gallery6: "/facility43_2.jpeg",
     unitA_tour: "https://framemakers.com.my/clients/parkside/type-a/",
     unitB_tour: "",
     unitC_tour: "https://virtualtour.my/setia-federal-hill/parkside-residences/type-c1",
     unitD_tour: "https://virtualtour.my/setia-federal-hill/parkside-residences/type-d2",
     unitE_tour: "https://framemakers.com.my/clients/parkside/type-e2/",
+  };
+
+  const mergeImages = (saved: Record<string, string> | null) => {
+    if (!saved) return defaultImages;
+    const merged: Record<string, string> = { ...defaultImages };
+    for (const key of Object.keys(defaultImages)) {
+      if (saved[key] && saved[key].trim() !== '') {
+        const val = saved[key].trim();
+        // Override stale cached .png, .webp, or .jpeg paths for floorplans / locationMap with current .jpg defaults
+        if ((key.startsWith('unit') || key === 'locationMap') && (val.endsWith('.png') || val.endsWith('.webp') || val.endsWith('.jpeg'))) {
+          merged[key] = defaultImages[key];
+        } else if (key.startsWith('gallery') && val.includes('gallery')) {
+          merged[key] = defaultImages[key];
+        } else {
+          merged[key] = val;
+        }
+      }
+    }
+    return merged;
   };
 
   const defaultSeo = {
@@ -846,7 +897,7 @@ export default function App() {
   const [images, setImages] = useState(() => {
     // Fast path: Check local storage immediately before first render
     const saved = typeof window !== 'undefined' ? localStorage.getItem('parkside_custom_images') : null;
-    return saved ? JSON.parse(saved) : defaultImages;
+    return saved ? mergeImages(JSON.parse(saved)) : defaultImages;
   });
 
   const [hasCustomImages, setHasCustomImages] = useState(() => {
@@ -863,14 +914,11 @@ export default function App() {
 
   // Fetch Initial Config & Subscribe to Real-time Updates
   useEffect(() => {
-    // If we are already showing cached images, we don't need to block
-    // but we still fetch the latest in the background
-    
     let isInitialLoad = true;
     const unsubscribe = subscribeToConfig((remoteConfig) => {
       if (remoteConfig) {
         if (remoteConfig.images) {
-          setImages(remoteConfig.images);
+          setImages(mergeImages(remoteConfig.images));
           setHasCustomImages(true);
         }
         if (remoteConfig.seo) {
@@ -880,7 +928,7 @@ export default function App() {
         // Fallback to local storage ONLY if no remote config exists yet
         const savedImages = localStorage.getItem('parkside_custom_images');
         if (savedImages && !hasCustomImages) {
-          setImages(JSON.parse(savedImages));
+          setImages(mergeImages(JSON.parse(savedImages)));
           setHasCustomImages(true);
         }
         const savedSeo = localStorage.getItem('parkside_custom_seo');
@@ -1004,12 +1052,22 @@ export default function App() {
   };
 
   const getFacilityImages = (level: number) => {
-    return [
+    const list = [
       images[`facility${level}_1`],
       images[`facility${level}_2`],
       images[`facility${level}_3`],
       images[`facility${level}_4`]
-    ].filter(Boolean);
+    ].filter((img) => img && typeof img === 'string' && img.trim() !== '');
+
+    if (list.length === 0) {
+      return [
+        defaultImages[`facility${level}_1`],
+        defaultImages[`facility${level}_2`],
+        defaultImages[`facility${level}_3`],
+        defaultImages[`facility${level}_4`]
+      ].filter((img) => img && typeof img === 'string' && img.trim() !== '');
+    }
+    return list;
   };
 
   const facilities = {
@@ -1077,7 +1135,13 @@ export default function App() {
           initial={{ scale: 1.05, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.7 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          src={images.hero.includes('?') ? images.hero : `${images.hero}?v=20260424`}
+          src={getImgSrc(images?.hero, '/hero.jpeg')}
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (target.src && !target.src.includes('hero.jpeg')) {
+              target.src = '/hero.jpeg';
+            }
+          }}
           alt="Parkside Residences Bangsar - Luxury Living @ Setia Federal Hill KL"
           referrerPolicy="no-referrer"
           fetchPriority="high"
@@ -1157,10 +1221,16 @@ export default function App() {
           >
             <div className="absolute -inset-4 border border-gold/20 -z-10 translate-x-8 translate-y-8" />
             <img 
-              src={images.vision} 
+              src={getImgSrc(images?.vision, '/vision.jpeg')} 
               alt="Parkside Residences Bangsar Masterplan - 52-Acre Urban Sanctuary" 
               referrerPolicy="no-referrer"
               loading="lazy"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.includes('vision.jpeg')) {
+                  target.src = '/vision.jpeg';
+                }
+              }}
               className="w-full h-auto transition-all duration-1000 shadow-2xl"
             />
           </motion.div>
@@ -1308,146 +1378,280 @@ export default function App() {
         </div>
       </section>
 
-      {/* --- CINEMATIC GALLERY --- */}
-      <section className="bg-white py-24 md:py-40">
-        <div className="max-w-7xl mx-auto px-6 mb-16">
+      {/* --- CURATED MASTERPIECES GALLERY --- */}
+      <section id="gallery" className="bg-white py-24 md:py-40">
+        <div className="max-w-7xl mx-auto px-6 mb-12 md:mb-16 text-center">
           <SectionHeading 
             subtitle={t.gallery.subtitle}
             title={t.gallery.title}
           />
-        </div>
-        
-        <div className="grid md:grid-cols-12 gap-6 px-6 max-w-[1600px] mx-auto">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="md:col-span-8 aspect-video md:aspect-[16/9] overflow-hidden relative group shadow-lg"
-          >
-            <img 
-              src={images.gallery1} 
-              alt="Luxury Living" 
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              referrerPolicy="no-referrer"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-dark/20 group-hover:bg-transparent transition-colors duration-500" />
-            <div className="absolute bottom-6 md:bottom-10 left-6 md:left-10 text-white opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
-               <p className="font-display text-[8px] md:text-[10px] uppercase tracking-[0.3em] mb-1 md:mb-2">{lang === 'en' ? "Exquisite Grandeur" : "精致庄华"}</p>
-               <h4 className="font-serif text-2xl md:text-3xl italic">{lang === 'en' ? "The Arrival Experience" : "到访体验"}</h4>
-            </div>
-          </motion.div>
           
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="md:col-span-4 aspect-video md:aspect-[4/5] overflow-hidden relative group shadow-lg"
-          >
-            <img 
-              src={images.gallery2} 
-              alt="Luxury Detail" 
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              referrerPolicy="no-referrer"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-dark/20 group-hover:bg-transparent transition-colors duration-500" />
-            <div className="absolute bottom-6 md:bottom-10 left-6 md:left-10 text-white opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
-               <p className="font-display text-[8px] md:text-[10px] uppercase tracking-[0.3em] mb-1 md:mb-2">{lang === 'en' ? "Refined Spaces" : "精致空间"}</p>
-               <h4 className="font-serif text-2xl md:text-3xl italic">{lang === 'en' ? "Thoughtful Craft" : "精雕细琢"}</h4>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* --- FACILITIES --- */}
-      <section id="facilities" className="bg-cream py-20 md:py-40">
-        <div className="max-w-7xl mx-auto px-6">
-          <SectionHeading 
-            subtitle={t.nav.amenities}
-            title={lang === 'en' ? "A Triad of Experiences" : "三重感官体验"}
-          />
-          
-          <div className="flex flex-wrap justify-center mb-12 md:mb-16 gap-4 md:gap-8">
-            {[8, 43, 61].map((level) => (
-              <button 
-                key={level}
-                onClick={() => setActiveFacility(level)}
-                className={`relative px-4 md:px-6 py-3 md:py-4 font-display text-[9px] md:text-[10px] uppercase tracking-[0.2em] md:tracking-[0.4em] transition-all ${
-                  activeFacility === level ? 'text-dark font-semibold' : 'text-dark/30 hover:text-dark/60'
+          {/* Gallery Category Filter Tabs */}
+          <div className="flex flex-wrap justify-center gap-3 md:gap-5 mt-8">
+            {[
+              { id: 'all', label: lang === 'en' ? "All Masterpieces" : "全部画廊杰作" },
+              { id: 'level8', label: lang === 'en' ? "Level 8: Parkside Retreat" : "8层: Parkside 悦园" },
+              { id: 'level43', label: lang === 'en' ? "Level 43: Parkside Collective" : "43层: Parkside 聚点" },
+              { id: 'level61', label: lang === 'en' ? "Level 61: Parkside Sky" : "61层: Parkside 云端" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setGalleryFilter(tab.id as any)}
+                className={`relative px-5 py-2.5 font-display text-[9px] md:text-[11px] uppercase tracking-[0.2em] transition-all duration-300 border ${
+                  galleryFilter === tab.id 
+                    ? 'bg-dark text-white border-dark shadow-md font-semibold' 
+                    : 'bg-cream/50 text-dark/60 border-dark/10 hover:border-gold hover:text-dark'
                 }`}
               >
-                {lang === 'en' ? 'LEVEL' : '楼层'} {level}
-                {activeFacility === level && (
-                  <motion.div 
-                    layoutId="facilityUnderline"
-                    className="absolute bottom-0 left-0 w-full h-[2px] bg-gold"
-                  />
-                )}
+                {tab.label}
               </button>
             ))}
           </div>
-
-          <div className="grid lg:grid-cols-2 gap-12 md:gap-16 items-center">
-            <motion.div
-              key={activeFacility}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="space-y-6 md:y-8"
-            >
-              <h3 className="font-serif text-3xl md:text-4xl text-dark italic leading-tight">{facilities[activeFacility].name}</h3>
-              <p className="text-dark/60 text-lg md:text-xl font-light leading-relaxed">
-                {facilities[activeFacility].desc}
-              </p>
-              <ul className="grid sm:grid-cols-2 gap-y-4 gap-x-8">
-                {facilities[activeFacility].items.map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-dark/80 group">
-                    <span className="w-2 md:w-3 h-px bg-gold group-hover:w-6 transition-all shrink-0" />
-                    <span className="font-display text-[10px] md:text-[11px] uppercase tracking-widest">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-            
-            <div className="relative aspect-video overflow-hidden border border-dark/5 bg-cream">
-               <AnimatePresence mode="wait">
-                <motion.img 
-                  key={`${activeFacility}-${activeFacilityImageIndex}`}
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.6 }}
-                  src={facilities[activeFacility].images[activeFacilityImageIndex] || facilities[activeFacility].images[0]}
-                  alt={facilities[activeFacility].name}
-                  referrerPolicy="no-referrer"
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-all duration-1000"
-                />
-               </AnimatePresence>
-
-               {/* Facility Image Switcher */}
-               {facilities[activeFacility].images.length > 1 && (
-                <div className="absolute bottom-6 right-6 flex gap-3 z-10 px-4 py-2 bg-dark/20 backdrop-blur-md rounded-full">
-                  {facilities[activeFacility].images.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveFacilityImageIndex(idx)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        activeFacilityImageIndex === idx ? 'bg-gold' : 'bg-white/30 hover:bg-white/50'
-                      }`}
-                    />
-                  ))}
-                </div>
-               )}
-
-               {/* Label */}
-               <div className="absolute top-6 left-6 px-4 py-2 bg-dark/80 backdrop-blur-md text-white font-display text-[9px] uppercase tracking-widest z-10">
-                 {facilities[activeFacility].images.length > 1 ? (lang === 'en' ? `View 0${activeFacilityImageIndex + 1}` : `视图 0${activeFacilityImageIndex + 1}`) : (lang === 'en' ? 'Level Experience' : '楼层体验')}
-               </div>
-            </div>
-          </div>
         </div>
+
+        {(() => {
+          const allGalleryMasterpieces = [
+            {
+              id: 'f8_1',
+              levelKey: 'level8',
+              badge: 'Level 8',
+              categoryName: lang === 'en' ? 'Level 8: Parkside Retreat' : '8层: Parkside 悦园',
+              title: lang === 'en' ? 'Infinity Edge Pool' : '无边际泳池',
+              subtitle: lang === 'en' ? 'Olympic-Length Lap Pool & Sun Deck' : '奥运标准无边际泳池与日光平台',
+              src: getImgSrc(images?.facility8_1 || images?.gallery1, '/facility8_1.jpeg'),
+              fallback: '/facility8_1.jpeg',
+              gridClass: 'md:col-span-8 aspect-video md:aspect-[16/9]'
+            },
+            {
+              id: 'f61_1',
+              levelKey: 'level61',
+              badge: 'Level 61',
+              categoryName: lang === 'en' ? 'Level 61: Parkside Sky' : '61层: Parkside 云端',
+              title: lang === 'en' ? 'Sky Lounge & Private Dining' : '云端会客室与私宴听',
+              subtitle: lang === 'en' ? 'Panoramic Views over KL Skyline' : '俯瞰吉隆坡宏伟天际',
+              src: getImgSrc(images?.facility61_1 || images?.gallery2, '/facility61_1.jpeg'),
+              fallback: '/facility61_1.jpeg',
+              gridClass: 'md:col-span-4 aspect-video md:aspect-[4/5]'
+            },
+            {
+              id: 'f43_1',
+              levelKey: 'level43',
+              badge: 'Level 43',
+              categoryName: lang === 'en' ? 'Level 43: Parkside Collective' : '43层: Parkside 聚点',
+              title: lang === 'en' ? 'Co-Working Hub & Lounge' : '共享办公与高空休憩区',
+              subtitle: lang === 'en' ? 'Collaborative Pods & Serene Space' : '高效办公与灵感激发场所',
+              src: getImgSrc(images?.facility43_1 || images?.gallery3, '/facility43_1.jpeg'),
+              fallback: '/facility43_1.jpeg',
+              gridClass: 'md:col-span-4 aspect-square'
+            },
+            {
+              id: 'f8_2',
+              levelKey: 'level8',
+              badge: 'Level 8',
+              categoryName: lang === 'en' ? 'Level 8: Parkside Retreat' : '8层: Parkside 悦园',
+              title: lang === 'en' ? 'Hydrotherapy Pool & Gardens' : '水疗池与热带植物园',
+              subtitle: lang === 'en' ? 'Spa Cabanas & Verdant Foliage' : '隐秘凉亭与绿意盎然',
+              src: getImgSrc(images?.facility8_2 || images?.gallery4, '/facility8_2.jpeg'),
+              fallback: '/facility8_2.jpeg',
+              gridClass: 'md:col-span-4 aspect-square'
+            },
+            {
+              id: 'f61_2',
+              levelKey: 'level61',
+              badge: 'Level 61',
+              categoryName: lang === 'en' ? 'Level 61: Parkside Sky' : '61层: Parkside 云端',
+              title: lang === 'en' ? 'Skyline Horizon & Observatory Deck' : '云端全景观景台',
+              subtitle: lang === 'en' ? 'Unobstructed 360° Vistas' : '360度无遮挡云端视野',
+              src: getImgSrc(images?.facility61_2 || images?.gallery5, '/facility61_2.jpeg'),
+              fallback: '/facility61_2.jpeg',
+              gridClass: 'md:col-span-4 aspect-square'
+            },
+            {
+              id: 'f43_2',
+              levelKey: 'level43',
+              badge: 'Level 43',
+              categoryName: lang === 'en' ? 'Level 43: Parkside Collective' : '43层: Parkside 聚点',
+              title: lang === 'en' ? 'Games & Entertainment Room' : '娱乐与休闲体验区',
+              subtitle: lang === 'en' ? 'Social Lounge & Games Hub' : '高雅娱乐与亲朋相聚',
+              src: getImgSrc(images?.facility43_2 || images?.gallery6, '/facility43_2.jpeg'),
+              fallback: '/facility43_2.jpeg',
+              gridClass: 'md:col-span-4 aspect-square'
+            },
+            {
+              id: 'f8_3',
+              levelKey: 'level8',
+              badge: 'Level 8',
+              categoryName: lang === 'en' ? 'Level 8: Parkside Retreat' : '8层: Parkside 悦园',
+              title: lang === 'en' ? 'Jogging Track & Green Deck' : '园林慢跑道与绿化平台',
+              subtitle: lang === 'en' ? 'Tropical Landscaped Gardens' : '热带植物景观园',
+              src: getImgSrc(images?.facility8_3, '/facility8_3.jpeg'),
+              fallback: '/facility8_3.jpeg',
+              gridClass: 'md:col-span-4 aspect-square'
+            },
+            {
+              id: 'f43_3',
+              levelKey: 'level43',
+              badge: 'Level 43',
+              categoryName: lang === 'en' ? 'Level 43: Parkside Collective' : '43层: Parkside 聚点',
+              title: lang === 'en' ? 'Yoga & Wellness Sanctuary' : '高空瑜伽与舒压房',
+              subtitle: lang === 'en' ? 'Hammock Garden & Relaxation Pods' : '吊床花园与书香养心',
+              src: getImgSrc(images?.facility43_3, '/facility43_3.jpeg'),
+              fallback: '/facility43_3.jpeg',
+              gridClass: 'md:col-span-4 aspect-square'
+            },
+            {
+              id: 'f61_3',
+              levelKey: 'level61',
+              badge: 'Level 61',
+              categoryName: lang === 'en' ? 'Level 61: Parkside Sky' : '61层: Parkside 云端',
+              title: lang === 'en' ? 'Sky Cocktail Bar' : '云端星空酒吧',
+              subtitle: lang === 'en' ? 'Bespoke Nighttime Ambiance' : '尊贵高空夜色交会所',
+              src: getImgSrc(images?.facility61_3, '/facility61_3.jpeg'),
+              fallback: '/facility61_3.jpeg',
+              gridClass: 'md:col-span-4 aspect-square'
+            },
+            {
+              id: 'f61_4',
+              levelKey: 'level61',
+              badge: 'Level 61',
+              categoryName: lang === 'en' ? 'Level 61: Parkside Sky' : '61层: Parkside 云端',
+              title: lang === 'en' ? 'Sky Gym & Altitude Fitness' : '云端高空健身中心',
+              subtitle: lang === 'en' ? 'State-of-the-Art Training Equipment' : '顶级高空动能健身与健体',
+              src: getImgSrc(images?.facility61_4, '/facility61_4.jpeg'),
+              fallback: '/facility61_4.jpeg',
+              gridClass: 'md:col-span-8 aspect-video md:aspect-[16/9]'
+            }
+          ];
+
+          const filteredMasterpieces = galleryFilter === 'all'
+            ? allGalleryMasterpieces
+            : allGalleryMasterpieces.filter((item) => item.levelKey === galleryFilter);
+
+          return (
+            <>
+              <div className="grid md:grid-cols-12 gap-6 px-6 max-w-[1600px] mx-auto">
+                <AnimatePresence mode="popLayout">
+                  {filteredMasterpieces.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.4 }}
+                      onClick={() => setLightboxIndex(allGalleryMasterpieces.findIndex(i => i.id === item.id))}
+                      className={`${galleryFilter === 'all' ? item.gridClass : 'md:col-span-6 lg:col-span-4 aspect-video'} overflow-hidden relative group shadow-lg cursor-pointer bg-dark/5`}
+                    >
+                      <img
+                        src={item.src}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.src.includes(item.fallback)) {
+                            target.src = getImgSrc(item.fallback);
+                          }
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-dark/90 via-dark/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-500" />
+                      
+                      {/* Badge */}
+                      <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-gold/90 backdrop-blur-md text-white font-display text-[9px] uppercase tracking-widest shadow-sm">
+                        {item.badge}
+                      </div>
+
+                      {/* Info overlay */}
+                      <div className="absolute bottom-6 left-6 right-6 text-white transition-all duration-500">
+                        <p className="font-display text-[8px] md:text-[10px] uppercase tracking-[0.3em] text-gold mb-1">{item.categoryName}</p>
+                        <h4 className="font-serif text-xl md:text-2xl lg:text-3xl italic mb-1">{item.title}</h4>
+                        <p className="text-xs text-white/70 font-light truncate">{item.subtitle}</p>
+                      </div>
+
+                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                        <Maximize2 className="w-4 h-4" />
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Lightbox Modal */}
+              <AnimatePresence>
+                {lightboxIndex !== null && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[2000] bg-dark/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 md:p-8"
+                  >
+                    {/* Close button */}
+                    <button
+                      onClick={() => setLightboxIndex(null)}
+                      className="absolute top-6 right-6 z-50 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+
+                    {/* Prev / Next */}
+                    <button
+                      onClick={() => setLightboxIndex((lightboxIndex - 1 + allGalleryMasterpieces.length) % allGalleryMasterpieces.length)}
+                      className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+
+                    <button
+                      onClick={() => setLightboxIndex((lightboxIndex + 1) % allGalleryMasterpieces.length)}
+                      className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+
+                    {/* Main Lightbox Image */}
+                    {(() => {
+                      const cur = allGalleryMasterpieces[lightboxIndex];
+                      return (
+                        <div className="max-w-6xl w-full flex flex-col items-center gap-6">
+                          <div className="relative max-h-[70vh] w-full flex items-center justify-center overflow-hidden border border-white/10 shadow-2xl">
+                            <motion.img
+                              key={cur.id}
+                              initial={{ opacity: 0, scale: 0.98 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.98 }}
+                              transition={{ duration: 0.3 }}
+                              src={cur.src}
+                              alt={cur.title}
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                if (!target.src.includes(cur.fallback)) {
+                                  target.src = getImgSrc(cur.fallback);
+                                }
+                              }}
+                              className="max-h-[70vh] w-auto max-w-full object-contain"
+                            />
+                          </div>
+
+                          <div className="text-center text-white space-y-2 max-w-2xl">
+                            <span className="px-3 py-1 bg-gold text-white font-display text-[9px] uppercase tracking-widest inline-block mb-1">
+                              {cur.badge} • {cur.categoryName}
+                            </span>
+                            <h3 className="font-serif text-2xl md:text-4xl italic">{cur.title}</h3>
+                            <p className="text-sm md:text-base text-white/70 font-light">{cur.subtitle}</p>
+                            <p className="text-[10px] font-display uppercase tracking-widest text-white/40 pt-2">
+                              {lightboxIndex + 1} / {allGalleryMasterpieces.length}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          );
+        })()}
       </section>
 
       {/* --- RESIDENCES --- */}
@@ -1554,9 +1758,15 @@ export default function App() {
               <div className="aspect-square bg-white/5 border border-white/10 p-3 md:p-4 transition-all duration-700 group-hover:border-gold/30">
                 <div className="w-full h-full border border-white/5 flex items-center justify-center relative bg-dark overflow-hidden">
                   <img 
-                    src={images.locationMap} 
+                    src={getImgSrc(images?.locationMap, '/locationMap.jpg')} 
                     alt="Location Map" 
                     loading="lazy"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.includes('locationMap.jpg')) {
+                        target.src = getImgSrc('/locationMap.jpg');
+                      }
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000"
                     referrerPolicy="no-referrer"
                   />
@@ -1625,39 +1835,6 @@ export default function App() {
                 : "欢迎莅临：马来西亚吉隆坡，孟沙，Setia Federal Hill 销售展厅 (59000)"}
             </motion.p>
           </div>
-        </div>
-      </section>
-
-      {/* --- AMENITY GRID (EXTRA IMAGES) --- */}
-      <section className="py-20 md:py-24 bg-white border-t border-dark/5">
-        <div className="max-w-7xl mx-auto px-6 mb-12 md:mb-16">
-          <SectionHeading 
-            subtitle={t.gallery.subtitle}
-            title={t.gallery.title}
-            centered={true}
-          />
-        </div>
-        <div className="max-w-[1600px] mx-auto px-6 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {[3, 4, 5, 6].map((i) => (
-            <motion.div 
-              key={i}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="overflow-hidden relative group aspect-square bg-cream border border-dark/5 shadow-sm"
-            >
-              <img 
-                src={images[`gallery${i}`]} 
-                alt={`Amenity ${i}`}
-                referrerPolicy="no-referrer"
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-dark/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
-                 <span className="font-display text-[8px] uppercase tracking-widest text-white border border-white/20 px-3 py-1 backdrop-blur-sm">{lang === 'en' ? 'View Space' : '查看空间'}</span>
-              </div>
-            </motion.div>
-          ))}
         </div>
       </section>
 
@@ -1739,6 +1916,15 @@ export default function App() {
                 ))}
                 <a href="#" className="font-display text-[8px] md:text-[9px] uppercase tracking-widest text-dark/40 hover:text-gold transition-colors">{lang === 'en' ? 'Privacy Policy' : '隐私政策'}</a>
                 <a href="#" className="font-display text-[8px] md:text-[9px] uppercase tracking-widest text-dark/40 hover:text-gold transition-colors">{lang === 'en' ? 'Terms of Service' : '服务条款'}</a>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.dispatchEvent(new CustomEvent('open-admin-panel'));
+                  }} 
+                  className="font-display text-[8px] md:text-[9px] uppercase tracking-widest text-dark/40 hover:text-gold transition-colors cursor-pointer"
+                >
+                  {lang === 'en' ? 'Admin Panel' : '管理后台'}
+                </button>
               </div>
               <p className="font-display text-[7px] md:text-[8px] text-dark/30 max-w-2xl text-center leading-relaxed">
                 {lang === 'en' 

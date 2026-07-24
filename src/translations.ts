@@ -1,9 +1,9 @@
 export const translations = {
   en: {
     nav: {
-      vision: "Vision",
-      residences: "Residences",
-      amenities: "Lifestyle",
+      vision: "Overview",
+      gallery: "Gallery",
+      residences: "Layouts",
       location: "Location",
       enquire: "Enquire Now"
     },
@@ -128,9 +128,9 @@ export const translations = {
   },
   zh: {
     nav: {
-      vision: "项目愿景",
-      residences: "精品住宅",
-      amenities: "品质生活",
+      vision: "项目概览",
+      gallery: "画廊展厅",
+      residences: "户型图",
       location: "地理位置",
       enquire: "立即咨询"
     },
