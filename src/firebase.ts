@@ -53,8 +53,18 @@ export async function fetchConfig(): Promise<any | null> {
 
 export async function saveConfig(images: Record<string, string>, seo?: Record<string, string>, user?: User | null) {
   const docRef = doc(db, CONFIG_DOC);
+  const cleanImages: Record<string, string> = {};
+  if (images) {
+    for (const [k, v] of Object.entries(images)) {
+      if (typeof v === 'string' && v.toLowerCase().includes('imgur')) {
+        cleanImages[k] = '';
+      } else {
+        cleanImages[k] = v;
+      }
+    }
+  }
   const payload: any = {
-    images,
+    images: cleanImages,
     updatedAt: serverTimestamp(),
     updatedBy: user ? user.uid : 'admin_password'
   };

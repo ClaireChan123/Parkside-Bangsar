@@ -813,6 +813,7 @@ export default function App() {
   const getImgSrc = (src: string | undefined, fallback: string = '/hero.jpeg') => {
     if (!src || src.trim() === '') return fallback;
     const cleanSrc = src.trim();
+    if (cleanSrc.toLowerCase().includes('imgur')) return fallback;
     if (cleanSrc.startsWith('data:') || cleanSrc.startsWith('blob:')) return cleanSrc;
     return cleanSrc.includes('?') ? cleanSrc : `${cleanSrc}?v=20260424`;
   };
@@ -868,8 +869,10 @@ export default function App() {
     for (const key of Object.keys(defaultImages)) {
       if (saved[key] && saved[key].trim() !== '') {
         const val = saved[key].trim();
-        // Override stale cached .png, .webp, or .jpeg paths for floorplans / locationMap with current .jpg defaults
-        if ((key.startsWith('unit') || key === 'locationMap') && (val.endsWith('.png') || val.endsWith('.webp') || val.endsWith('.jpeg'))) {
+        // Ignore any imgur URLs previously saved
+        if (val.toLowerCase().includes('imgur')) {
+          merged[key] = defaultImages[key];
+        } else if ((key.startsWith('unit') || key === 'locationMap') && (val.endsWith('.png') || val.endsWith('.webp') || val.endsWith('.jpeg'))) {
           merged[key] = defaultImages[key];
         } else if (key.startsWith('gallery') && val.includes('gallery')) {
           merged[key] = defaultImages[key];
@@ -903,6 +906,28 @@ export default function App() {
   const [hasCustomImages, setHasCustomImages] = useState(() => {
     return typeof window !== 'undefined' ? !!localStorage.getItem('parkside_custom_images') : false;
   });
+
+  // Clean up any previously stored Imgur URLs from LocalStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('parkside_custom_images');
+      if (saved && saved.toLowerCase().includes('imgur')) {
+        try {
+          const parsed = JSON.parse(saved);
+          const cleaned: Record<string, string> = {};
+          for (const [k, v] of Object.entries(parsed)) {
+            if (typeof v === 'string' && !v.toLowerCase().includes('imgur')) {
+              cleaned[k] = v;
+            }
+          }
+          localStorage.setItem('parkside_custom_images', JSON.stringify(cleaned));
+          setImages(mergeImages(cleaned));
+        } catch (e) {
+          localStorage.removeItem('parkside_custom_images');
+        }
+      }
+    }
+  }, []);
 
   // Auth Listener
   useEffect(() => {
