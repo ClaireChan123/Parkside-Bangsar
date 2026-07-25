@@ -883,11 +883,13 @@ export default function App() {
     return merged;
   };
 
+  const defaultKeywords = "parkside bangsar residence, parkside bangsar residences, parkside bangsar TRX, parkside bangsar new launch, parkside bangsar price, parkside bangsar size, parkside bangsar sf, parkside bangsar completion date, parkside bangsar developer, parkside bangsar klcc, parkside bangsar layout, parkside bangsar completion, parkside bangsar site location, parkside bangsar location, parkside bangsar condo, parkside bangsar sales gallery, parkside bangsar showroom, parkside bangsar show unit, Parkside Residences Bangsar, Setia Federal Hill, Bangsar Luxury Condo, KL New Property 2026, Bangsar Residential, SP Setia Federal Hill, Luxury Suites Bangsar";
+
   const defaultSeo = {
     headline_en: "Parkside Residences: Nature's Rhythm In Bangsar",
     headline_zh: "Parkside Residences: 城心脉搏，自然律动",
     description: "Parkside Residences Bangsar offers premium luxury living within the 52-acre Setia Federal Hill masterplan. Exclusive suites starting from 485 sq. ft. Register for private viewing.",
-    keywords: "Parkside Residences Bangsar, Setia Federal Hill, Bangsar Luxury Condo, KL New Property 2026, Bangsar Residential, SP Setia Federal Hill, Luxury Suites Bangsar",
+    keywords: defaultKeywords,
     googleVerification: "SEr_TXbqdQipXgvNzvT_CRujszChYw3tfdur2iLt2D8"
   };
 
